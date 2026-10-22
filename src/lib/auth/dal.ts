@@ -1,5 +1,6 @@
 import "server-only";
 
+import { io } from "next/cache";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
@@ -30,6 +31,9 @@ export function isSessionCurrent(tokenVersion: number | undefined, dbVersion: nu
  * session, the officer no longer exists, or the session version is stale.
  */
 export const getCurrentOfficer = cache(async (): Promise<SessionOfficer | null> => {
+  // Auth.js creates a random CSRF token on each auth() call when the request
+  // has no CSRF cookie, so keep this out of the prerendered shell.
+  await io();
   const session = await auth();
   const id = session?.user?.id;
   if (!id) return null;
