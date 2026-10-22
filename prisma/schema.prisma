@@ -1,0 +1,186 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Connection URL lives in prisma.config.ts (Prisma 7)
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum HazardType {
+  VOLCANIC_ERUPTION
+  ASHFALL
+  LAHAR
+  TYPHOON
+  HEAVY_RAIN
+  FLOOD
+}
+
+enum Severity {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  RESOLVED
+}
+
+enum RecipientStatus {
+  PENDING // queued at UniSMS, no delivery report yet
+  RETRYING // UniSMS is retrying delivery
+  SENT
+  FAILED // UniSMS reported failure, or the gateway call itself failed
+  SKIPPED // rejected before sending (invalid number / unreachable network), no credit used
+}
+
+// ─────────────────────────────────────────────
+// The one officer account
+// ─────────────────────────────────────────────
+
+model Officer {
+  id             String @id @default(cuid())
+  name           String
+  email          String @unique // stored lowercase
+  passwordHash   String
+  sessionVersion Int    @default(1) // bumped on password change; older sessions are rejected
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("officer")
+}
+
+// ─────────────────────────────────────────────
+// Registry
+// ─────────────────────────────────────────────
+
+model FarmZone {
+  id          String  @id @default(cuid())
+  name        String  @unique // e.g. "Purok 3"
+  description String?
+  latitude    Float
+  longitude   Float
+
+  members Member[]
+  alerts  HazardAlert[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("farm_zone")
+}
+
+model Member {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  phone     String   @unique // canonical +639XXXXXXXXX
+  crops     String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  consentAt DateTime // when RA 10173 consent was recorded
+
+  zoneId String
+  zone   FarmZone @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+
+  recipients BroadcastRecipient[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([zoneId, isActive])
+  @@map("member")
+}
+
+// ─────────────────────────────────────────────
+// Alerts
+// ─────────────────────────────────────────────
+
+model HazardAlert {
+  id            String      @id @default(cuid())
+  title         String
+  hazardType    HazardType
+  severity      Severity
+  officialLevel String? // "Alert Level 3", "Signal No. 2", "Orange Rainfall Warning"
+  description   String      @db.Text
+  status        AlertStatus @default(ACTIVE)
+  resolvedAt    DateTime?
+
+  zones      FarmZone[] // implicit many-to-many
+  broadcasts Broadcast[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@map("hazard_alert")
+}
+
+// ─────────────────────────────────────────────
+// SMS
+// ─────────────────────────────────────────────
+
+model Broadcast {
+  id                  String   @id @default(cuid())
+  idempotencyKey      String   @unique // one per compose form; blocks double sends
+  content             String   @db.Text // final text, prefix included
+  senderId            String
+  creditsPerRecipient Int
+  blastIds            String[] // one UniSMS blast_id per 500-recipient chunk
+
+  alertId String?
+  alert   HazardAlert? @relation(fields: [alertId], references: [id], onDelete: SetNull)
+
+  retryOfId String?
+  retryOf   Broadcast?  @relation("BroadcastRetry", fields: [retryOfId], references: [id], onDelete: SetNull)
+  retries   Broadcast[] @relation("BroadcastRetry")
+
+  recipients BroadcastRecipient[]
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("broadcast")
+}
+
+model BroadcastRecipient {
+  id          String          @id @default(cuid())
+  broadcastId String
+  memberId    String?
+  phone       String // snapshot at send time
+  name        String // snapshot at send time
+  status      RecipientStatus @default(PENDING)
+  providerRef String?         @unique // UniSMS reference_id ("msg_…")
+  failReason  String?
+
+  broadcast Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+  member    Member?   @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([broadcastId, phone])
+  @@index([broadcastId, status])
+  @@map("broadcast_recipient")
+}
+
+model MessageTemplate {
+  id         String      @id @default(cuid())
+  name       String      @unique
+  hazardType HazardType? // null = usable for any hazard
+  body       String      @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("message_template")
+}
