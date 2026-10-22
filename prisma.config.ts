@@ -8,6 +8,7 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
+    seed: "tsx prisma/seed.ts",
   },
   datasource: {
     // process.env, not env(): `prisma generate` runs on install (e.g. Vercel) without a database URL.
