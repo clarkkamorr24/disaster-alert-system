@@ -1,15 +1,16 @@
+import { AccountPlaceholder } from "@/components/app-shell/account-placeholder";
+import { AppSidebar } from "@/components/app-shell/app-sidebar";
 import { TopBar } from "@/components/app-shell/top-bar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-1">
-      <aside className="hidden w-64 shrink-0 border-r bg-sidebar p-4 text-sidebar-foreground md:block">
-        <h2>Sidebar</h2>
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
+    <SidebarProvider defaultOpen>
+      <AppSidebar footer={<AccountPlaceholder />} />
+      <SidebarInset className="min-w-0">
         <TopBar />
         <main className="flex-1 p-4">{children}</main>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
