@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "postinstall": "prisma generate",
     "db:seed": "prisma db seed",
-    "db:seed:demo": "tsx prisma/seed-demo.ts"
+    "db:seed:demo": "tsx prisma/seed-demo.ts",
+    "account:reset-password": "tsx scripts/reset-password.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
