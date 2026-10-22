@@ -3,7 +3,7 @@
 import { AuthError } from "next-auth";
 import { z } from "zod";
 
-import { signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
 import type { ActionResult } from "@/types/action-result";
 
 const signInSchema = z.object({
@@ -39,4 +39,8 @@ export async function signInAction(
     // signIn redirects by throwing; let Next.js handle it.
     throw error;
   }
+}
+
+export async function signOutAction(): Promise<void> {
+  await signOut({ redirectTo: "/sign-in" });
 }
