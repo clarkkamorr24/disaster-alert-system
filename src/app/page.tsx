@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 export default function Home() {
-  return <div> MI-ISI</div>;
+  redirect("/dashboard");
 }
