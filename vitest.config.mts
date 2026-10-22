@@ -10,5 +10,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // next-auth imports "next/server" without an extension, which Node's ESM resolver rejects;
+    // inlining lets Vite resolve it instead.
+    server: { deps: { inline: ["next-auth"] } },
   },
 });
