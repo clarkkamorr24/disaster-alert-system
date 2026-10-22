@@ -35,6 +35,8 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# claude
 .claude
 
 # typescript
@@ -44,3 +46,6 @@ next-env.d.ts
 
 # prisma
 /src/generated
+
+# playwright mcp
+/.playwright-mcp
