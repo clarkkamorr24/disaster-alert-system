@@ -13,11 +13,13 @@ import { getEnv } from "@/lib/env";
  *
  * @param skip - How many of the newest broadcasts to pass over.
  * @param take - How many broadcasts to return.
+ * @param where - Which broadcasts to include, such as those of one alert; all by default.
  * @returns The broadcasts with `title` (see `broadcastTitle`), `recipientCount`,
  *   `sent`, `notReached` (failed + skipped), and `status`.
  */
-export async function loadBroadcastSummaries(skip: number, take: number) {
+export async function loadBroadcastSummaries(skip: number, take: number, where: Prisma.BroadcastWhereInput = {}) {
   const broadcasts = await prisma.broadcast.findMany({
+    where,
     orderBy: { createdAt: "desc" },
     skip,
     take,

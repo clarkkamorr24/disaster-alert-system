@@ -34,3 +34,17 @@ export const alertInputSchema = z.object({
 
 /** A parsed, valid alert form. */
 export type AlertInput = z.infer<typeof alertInputSchema>;
+
+/**
+ * The New alert form: the alert fields, a UUID idempotency key (one per form),
+ * whether to send the SMS, and the SMS as typed. `content` isn't checked
+ * here; the send checks it only when `send` is true.
+ */
+export const alertSendSchema = alertInputSchema.extend({
+  idempotencyKey: z.uuid({ error: "Reload the page and try again." }),
+  send: z.boolean(),
+  content: z.string(),
+});
+
+/** A parsed New alert form. */
+export type AlertSendParsed = z.infer<typeof alertSendSchema>;

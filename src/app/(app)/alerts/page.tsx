@@ -17,7 +17,7 @@ export default function AlertsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="w-full">
       <PageHeader
         eyebrow="Association records"
         title="Hazard alerts"

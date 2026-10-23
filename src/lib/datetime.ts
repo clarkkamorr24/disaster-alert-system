@@ -56,3 +56,60 @@ export function formatManilaDateTime(date: Date): string {
 export function formatManilaTime(date: Date): string {
   return timeFormatter.format(date);
 }
+
+/** Manila's offset from UTC. The Philippines has no daylight saving time. */
+const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000;
+
+const monthDayFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  timeZone: DISPLAY_TIME_ZONE,
+});
+
+const monthDayYearFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: DISPLAY_TIME_ZONE,
+});
+
+/** The instant shifted so its UTC fields read as Manila's wall clock. */
+function manilaWallClock(date: Date): Date {
+  return new Date(date.getTime() + MANILA_OFFSET_MS);
+}
+
+function manilaDayKey(date: Date): string {
+  return manilaWallClock(date).toISOString().slice(0, 10);
+}
+
+/**
+ * Finds midnight on 1 January of the current Manila calendar year.
+ *
+ * @param now - The current instant.
+ * @returns That midnight as a UTC instant.
+ *
+ * @example
+ * startOfManilaYear(new Date("2026-01-01T15:00:00Z")); // 2025-12-31T16:00:00.000Z
+ */
+export function startOfManilaYear(now: Date): Date {
+  const year = manilaWallClock(now).getUTCFullYear();
+  return new Date(Date.UTC(year, 0, 1) - MANILA_OFFSET_MS);
+}
+
+/**
+ * Formats a date relative to today in Philippine time: `Today, 8:24 AM`,
+ * `Yesterday, 4:16 PM`, `May 18, 2:10 PM`, or with the year when it isn't
+ * the current one, `Dec 30, 2025, 9:00 AM`.
+ *
+ * @param date - A UTC instant.
+ * @param now - The current instant.
+ * @returns The label.
+ */
+export function formatRelativeManila(date: Date, now: Date): string {
+  const time = formatManilaTime(date);
+  const day = manilaDayKey(date);
+  if (day === manilaDayKey(now)) return `Today, ${time}`;
+  if (day === manilaDayKey(new Date(now.getTime() - 24 * 60 * 60 * 1000))) return `Yesterday, ${time}`;
+  const sameYear = manilaWallClock(date).getUTCFullYear() === manilaWallClock(now).getUTCFullYear();
+  return `${(sameYear ? monthDayFormatter : monthDayYearFormatter).format(date)}, ${time}`;
+}

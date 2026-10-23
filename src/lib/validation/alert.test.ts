@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { alertInputSchema, NO_ZONES_MESSAGE } from "./alert";
+import { alertInputSchema, alertSendSchema, NO_ZONES_MESSAGE } from "./alert";
 
 const valid = {
   title: "Mayon raised to Alert Level 3",
@@ -53,5 +53,32 @@ describe("alertInputSchema", () => {
   it("allows a blank description up to 2,000 characters", () => {
     expect(alertInputSchema.parse({ ...valid, description: "" }).description).toBe("");
     expect(alertInputSchema.safeParse({ ...valid, description: "a".repeat(2001) }).success).toBe(false);
+  });
+});
+
+describe("alertSendSchema", () => {
+  const send = { ...valid, idempotencyKey: "4f9c2a7e-1b3d-4c5e-8f60-123456789abc", send: true, content: "Lumikas" };
+
+  it("accepts the alert with its key and message", () => {
+    expect(alertSendSchema.safeParse(send).success).toBe(true);
+  });
+
+  it("rejects a key that isn't a UUID", () => {
+    const parsed = alertSendSchema.safeParse({ ...send, idempotencyKey: "abc" });
+    expect(parsed.error!.issues).toEqual([
+      expect.objectContaining({ path: ["idempotencyKey"], message: "Reload the page and try again." }),
+    ]);
+  });
+
+  it("keeps an empty message when the SMS isn't sent", () => {
+    expect(alertSendSchema.parse({ ...send, send: false, content: "" })).toMatchObject({ send: false, content: "" });
+  });
+
+  it("asks for a hazard and severity that weren't chosen", () => {
+    const parsed = alertSendSchema.safeParse({ ...send, hazardType: null, severity: null });
+    expect(parsed.error!.issues.map((issue) => issue.message)).toEqual([
+      "Choose a hazard type.",
+      "Choose a severity.",
+    ]);
   });
 });

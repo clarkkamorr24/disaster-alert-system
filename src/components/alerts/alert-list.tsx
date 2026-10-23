@@ -1,168 +1,175 @@
-import { ChevronRight, ShieldCheck } from "lucide-react";
+import { CircleAlert, CircleCheck, ShieldCheck, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 
-import { HazardBadge } from "@/components/alerts/hazard-badge";
-import { SeverityBadge } from "@/components/alerts/severity-badge";
+import { AlertFilterPopover } from "@/components/alerts/alert-filter-popover";
+import { AlertTable } from "@/components/alerts/alert-table";
+import { LinkTabs } from "@/components/layout/link-tabs";
+import { PaginationFooter } from "@/components/layout/pagination-footer";
+import { StatStrip } from "@/components/layout/stat-strip";
+import { SearchField, TableToolbar } from "@/components/layout/table-toolbar";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import type { Prisma } from "@/generated/prisma/client";
 import { requireOfficer } from "@/lib/auth/dal";
-import { formatManilaDateTime } from "@/lib/datetime";
+import { ALERTS_PER_PAGE, alertListHref, alertListWhere, parseAlertListFilters } from "@/lib/alerts/list-filters";
+import { startOfManilaYear } from "@/lib/datetime";
 import { prisma } from "@/lib/db";
-import type { AlertTab } from "@/types/alert";
+import type { AlertListFilters, AlertTab } from "@/types/alert";
 
 interface AlertListProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-const TABS: { tab: AlertTab; label: string; href: string }[] = [
-  { tab: "active", label: "Active", href: "/alerts" },
-  { tab: "resolved", label: "Resolved", href: "/alerts?tab=resolved" },
-];
+const TAB_LABELS: Record<AlertTab, string> = { all: "All alerts", active: "Active", resolved: "Resolved" };
 
-function AlertTabs({ current }: { current: AlertTab }) {
-  return (
-    <nav aria-label="Alert status" className="flex w-fit gap-1 rounded-lg bg-muted p-1">
-      {TABS.map(({ tab, label, href }) => (
-        <Link
-          key={tab}
-          href={href}
-          aria-current={tab === current ? "page" : undefined}
-          className="inline-flex min-h-11 items-center rounded-md px-4 font-medium text-muted-foreground hover:text-foreground aria-[current=page]:bg-background aria-[current=page]:text-foreground aria-[current=page]:shadow-sm"
-        >
-          {label}
+const EMPTY_MESSAGES: Record<AlertTab, string> = {
+  all: "No alerts yet.",
+  active: "No active alerts.",
+  resolved: "No resolved alerts yet.",
+};
+
+const ORDER: Record<AlertTab, Prisma.HazardAlertOrderByWithRelationInput[]> = {
+  all: [{ createdAt: "desc" }],
+  active: [{ createdAt: "desc" }],
+  resolved: [{ resolvedAt: "desc" }, { createdAt: "desc" }],
+};
+
+/** Counts for the stat strip; they ignore the search and filters. */
+async function loadStats(now: Date) {
+  const [active, critical, resolvedThisYear] = await Promise.all([
+    prisma.hazardAlert.count({ where: { status: "ACTIVE" } }),
+    prisma.hazardAlert.count({ where: { status: "ACTIVE", severity: "CRITICAL" } }),
+    prisma.hazardAlert.count({ where: { status: "RESOLVED", resolvedAt: { gte: startOfManilaYear(now) } } }),
+  ]);
+  return [
+    { label: "Active alerts", value: String(active), icon: CircleAlert, tone: "critical" as const },
+    { label: "Critical", value: String(critical), icon: TriangleAlert, tone: "moderate" as const },
+    { label: "Resolved this year", value: String(resolvedThisYear), icon: CircleCheck, tone: "clear" as const },
+  ];
+}
+
+/** The page of alerts and the count of every tab, all with the same search and filters. */
+async function loadAlerts(filters: AlertListFilters) {
+  const base = alertListWhere(filters, false);
+  const [rows, all, active, resolved, totalZones] = await Promise.all([
+    prisma.hazardAlert.findMany({
+      where: alertListWhere(filters),
+      orderBy: ORDER[filters.tab],
+      skip: (filters.page - 1) * ALERTS_PER_PAGE,
+      take: ALERTS_PER_PAGE,
+      select: {
+        id: true,
+        title: true,
+        hazardType: true,
+        severity: true,
+        officialLevel: true,
+        status: true,
+        createdAt: true,
+        zones: { select: { name: true } },
+      },
+    }),
+    prisma.hazardAlert.count({ where: base }),
+    prisma.hazardAlert.count({ where: { ...base, status: "ACTIVE" } }),
+    prisma.hazardAlert.count({ where: { ...base, status: "RESOLVED" } }),
+    prisma.farmZone.count(),
+  ]);
+  const counts: Record<AlertTab, number> = { all, active, resolved };
+  return { rows, total: counts[filters.tab], counts, totalZones };
+}
+
+const LINK_CLASS = "inline-flex min-h-11 items-center text-xs font-bold text-link hover:text-primary-hover";
+
+/** Shown instead of the table: past the last page, no matches, or an empty tab. */
+function EmptyState({ filters, pastEnd }: { filters: AlertListFilters; pastEnd: boolean }) {
+  const filtered = filters.q !== "" || filters.hazard !== null || filters.severity !== null;
+  if (pastEnd) {
+    return (
+      <div className="flex flex-col items-center gap-2 p-8 text-center">
+        <p className="text-sm text-muted-foreground">There are no alerts on this page.</p>
+        <Link href={alertListHref(filters, 1)} className={LINK_CLASS}>
+          Go to the first page
         </Link>
-      ))}
-    </nav>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col items-center gap-2 p-8 text-center">
+      <ShieldCheck className="size-6 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
+      <p className="text-sm text-muted-foreground">
+        {filtered ? "No alerts match your search." : EMPTY_MESSAGES[filters.tab]}
+      </p>
+      {filtered && (
+        <Link
+          href={alertListHref({ ...filters, q: "", hazard: null, severity: null, page: 1 })}
+          className={LINK_CLASS}
+        >
+          Clear filters
+        </Link>
+      )}
+    </div>
   );
 }
 
-/** The alert log: Active / Resolved tabs, newest first; a table from `md` up, cards below. Render inside `<Suspense>`. */
+/**
+ * The alert log: a stat strip, then a card with All / Active / Resolved tabs,
+ * search, filters, the table, and 25 per page. Render inside `<Suspense>`.
+ */
 export async function AlertList({ searchParams }: AlertListProps) {
-  const { tab: tabParam } = await searchParams;
+  const params = await searchParams;
   await requireOfficer();
 
-  const tab: AlertTab = tabParam === "resolved" ? "resolved" : "active";
-  const resolved = tab === "resolved";
+  const filters = parseAlertListFilters(params);
+  const now = new Date();
+  const [stats, { rows, total, counts, totalZones }] = await Promise.all([loadStats(now), loadAlerts(filters)]);
 
-  const alerts = await prisma.hazardAlert.findMany({
-    where: { status: resolved ? "RESOLVED" : "ACTIVE" },
-    orderBy: resolved ? [{ resolvedAt: "desc" }, { createdAt: "desc" }] : { createdAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      hazardType: true,
-      severity: true,
-      officialLevel: true,
-      createdAt: true,
-      resolvedAt: true,
-      zones: { orderBy: { name: "asc" }, select: { name: true } },
-    },
-  });
-
-  const dateLabel = resolved ? "Resolved" : "Logged";
-  const dateOf = (alert: (typeof alerts)[number]) =>
-    formatManilaDateTime(resolved && alert.resolvedAt ? alert.resolvedAt : alert.createdAt);
-  const zoneNames = (alert: (typeof alerts)[number]) =>
-    alert.zones.map((zone) => zone.name).join(", ");
+  const skip = (filters.page - 1) * ALERTS_PER_PAGE;
+  const lastPage = Math.max(1, Math.ceil(total / ALERTS_PER_PAGE));
+  const pastEnd = total > 0 && filters.page > lastPage;
+  const tabs = (Object.keys(TAB_LABELS) as AlertTab[]).map((tab) => ({
+    href: alertListHref({ ...filters, tab, page: 1 }),
+    label: TAB_LABELS[tab],
+    count: counts[tab],
+    current: tab === filters.tab,
+  }));
 
   return (
-    <div className="flex flex-col gap-4">
-      <AlertTabs current={tab} />
-
-      {alerts.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed p-8 text-center">
-          <ShieldCheck className="size-6 text-muted-foreground" aria-hidden="true" />
-          <p className="text-muted-foreground">
-            {resolved ? "No resolved alerts yet." : "No active alerts. All zones are clear."}
-          </p>
-        </div>
-      ) : (
-        <>
-          <div className="hidden rounded-xl border md:block">
-            <Table className="text-base">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="px-4">Hazard</TableHead>
-                  <TableHead className="px-4">Title</TableHead>
-                  <TableHead className="px-4">Severity</TableHead>
-                  <TableHead className="px-4">Affected zones</TableHead>
-                  <TableHead className="px-4">{dateLabel}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {alerts.map((alert) => (
-                  <TableRow key={alert.id}>
-                    <TableCell className="px-4 py-3">
-                      <HazardBadge type={alert.hazardType} />
-                    </TableCell>
-                    <TableCell className="max-w-64 px-4 py-3 whitespace-normal">
-                      <Link href={`/alerts/${alert.id}`} className="font-medium text-primary hover:underline">
-                        {alert.title}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="px-4 py-3">
-                      <div className="flex flex-col items-start gap-1">
-                        <SeverityBadge severity={alert.severity} />
-                        {alert.officialLevel && (
-                          <span className="text-sm text-muted-foreground">{alert.officialLevel}</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="max-w-56 px-4 py-3 whitespace-normal">
-                      {zoneNames(alert)}
-                    </TableCell>
-                    <TableCell className="px-4 py-3 text-muted-foreground">{dateOf(alert)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          <ul className="flex flex-col gap-2 md:hidden">
-            {alerts.map((alert) => (
-              <li key={alert.id}>
-                <Link
-                  href={`/alerts/${alert.id}`}
-                  className="flex min-h-11 items-center justify-between gap-3 rounded-xl border bg-card p-4 hover:bg-muted"
-                >
-                  <div className="flex min-w-0 flex-col gap-2">
-                    <HazardBadge type={alert.hazardType} />
-                    <span className="font-medium">{alert.title}</span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <SeverityBadge severity={alert.severity} />
-                      {alert.officialLevel && (
-                        <span className="text-sm text-muted-foreground">{alert.officialLevel}</span>
-                      )}
-                    </div>
-                    <span className="text-sm">{zoneNames(alert)}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {dateLabel} {dateOf(alert)}
-                    </span>
-                  </div>
-                  <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
+    <>
+      <StatStrip items={stats} />
+      <div className="overflow-hidden rounded-xl border bg-card">
+        <LinkTabs label="Alert status" tabs={tabs} />
+        <TableToolbar>
+          <SearchField
+            action="/alerts"
+            label="Search alerts"
+            placeholder="Search alerts…"
+            defaultValue={filters.q}
+            keep={{ tab: filters.tab === "active" ? null : filters.tab, hazard: filters.hazard, severity: filters.severity }}
+          />
+          <AlertFilterPopover filters={filters} />
+        </TableToolbar>
+        {rows.length === 0 ? (
+          <EmptyState filters={filters} pastEnd={pastEnd} />
+        ) : (
+          <AlertTable rows={rows} totalZones={totalZones} now={now} />
+        )}
+        <PaginationFooter
+          from={rows.length === 0 ? 0 : skip + 1}
+          to={skip + rows.length}
+          total={total}
+          noun={total === 1 ? "alert" : "alerts"}
+          prevHref={filters.page > 1 ? alertListHref(filters, Math.min(filters.page - 1, lastPage)) : null}
+          nextHref={skip + rows.length < total ? alertListHref(filters, filters.page + 1) : null}
+        />
+      </div>
+    </>
   );
 }
 
 /** Placeholder while {@link AlertList} loads. */
 export function AlertListSkeleton() {
   return (
-    <div className="flex flex-col gap-4">
-      <Skeleton className="h-13 w-52 rounded-lg" />
-      <Skeleton className="h-48 rounded-xl" />
-    </div>
+    <>
+      <Skeleton className="mb-[18px] h-[88px] rounded-xl" />
+      <Skeleton className="h-[480px] rounded-xl" />
+    </>
   );
 }

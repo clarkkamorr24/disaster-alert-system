@@ -19,15 +19,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  findUnfilledPlaceholders,
+  composeMessageErrors,
   NO_BROADCAST_ZONES_MESSAGE,
   NO_MEMBERS_MESSAGE,
   NO_UNREACHED_MESSAGE,
   NOT_ENOUGH_CREDITS_MESSAGE,
   renderComposeMessage,
-  unfilledPlaceholderMessage,
 } from "@/lib/broadcast/compose";
-import { estimateCredits, sanitizeSmsText, validateSmsContent, withPrefix } from "@/lib/domain/sms-text";
+import { estimateCredits, sanitizeSmsText, withPrefix } from "@/lib/domain/sms-text";
 import { isRedirectError } from "@/lib/redirect-error";
 import type { ActionResult } from "@/types/action-result";
 import type {
@@ -61,17 +60,6 @@ interface ComposeFormProps {
 }
 
 type SendResult = ActionResult<{ broadcastId: string }>;
-
-/** The problems that keep a message from being sent, in the order the officer should fix them. */
-function messageErrors(body: string, text: string, blockLinks: boolean): string[] {
-  if (body === "") return [];
-  const unfilled = findUnfilledPlaceholders(body);
-  const validation = validateSmsContent(text, { blockLinks });
-  return [
-    ...(unfilled.length > 0 ? [unfilledPlaceholderMessage(unfilled)] : []),
-    ...(validation.ok ? [] : validation.errors),
-  ];
-}
 
 export function ComposeForm({
   idempotencyKey,
@@ -110,7 +98,7 @@ export function ComposeForm({
 
   const body = sanitizeSmsText(message);
   const text = body === "" ? "" : withPrefix(body, prefix);
-  const errors = messageErrors(body, text, blockLinks);
+  const errors = composeMessageErrors(body, text, blockLinks);
   const creditsPerMember = estimateCredits(text);
   const selectedZones = zones.filter((zone) => zoneIds.includes(zone.id));
   const memberCount = resend
