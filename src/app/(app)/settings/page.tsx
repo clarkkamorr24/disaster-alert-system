@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { AccountCard } from "@/components/settings/account-card";
 import { PasswordChangedToast } from "@/components/settings/password-changed-toast";
+import { SmsCard } from "@/components/settings/sms-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
@@ -22,7 +23,9 @@ export default function SettingsPage() {
         <AccountCard />
       </Suspense>
 
-      {/* SMS card goes here (spec 14: driver, sender ID, credit balance, webhook URL). */}
+      <Suspense fallback={<Skeleton className="h-96 rounded-xl" />}>
+        <SmsCard />
+      </Suspense>
     </div>
   );
 }
