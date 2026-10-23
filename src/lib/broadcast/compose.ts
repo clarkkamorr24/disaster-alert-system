@@ -1,3 +1,4 @@
+import { validateSmsContent } from "@/lib/domain/sms-text";
 import { renderTemplate, TEMPLATE_PLACEHOLDERS } from "@/lib/templates/render";
 import type { ComposeAlert, ComposeTemplate } from "@/types/broadcast";
 
@@ -79,4 +80,23 @@ export function findUnfilledPlaceholders(message: string): string[] {
  */
 export function unfilledPlaceholderMessage(placeholders: string[]): string {
   return `Replace ${placeholders.join(", ")} with the actual text.`;
+}
+
+/**
+ * Lists what keeps a message from being sent, in the order the officer
+ * should fix it: placeholders left in, then the SMS rules.
+ *
+ * @param body - The sanitized message without the prefix; `""` gives no errors.
+ * @param text - The same message with the prefix.
+ * @param blockLinks - Whether links are blocked (the default sender ID can't send them).
+ * @returns The problems, or an empty list.
+ */
+export function composeMessageErrors(body: string, text: string, blockLinks: boolean): string[] {
+  if (body === "") return [];
+  const unfilled = findUnfilledPlaceholders(body);
+  const validation = validateSmsContent(text, { blockLinks });
+  return [
+    ...(unfilled.length > 0 ? [unfilledPlaceholderMessage(unfilled)] : []),
+    ...(validation.ok ? [] : validation.errors),
+  ];
 }

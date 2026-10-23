@@ -6,6 +6,8 @@ import {
   Info,
   Mountain,
   OctagonAlert,
+  Sun,
+  Tornado,
   TriangleAlert,
   Waves,
   Wind,
@@ -43,7 +45,7 @@ export const HAZARD_TYPES: Record<HazardType, HazardConfig> = {
   },
   TYPHOON: {
     label: "Typhoon",
-    icon: Wind,
+    icon: Tornado,
     color: "#2563eb",
     levelSuggestions: TCWS_SIGNALS,
   },
@@ -58,6 +60,18 @@ export const HAZARD_TYPES: Record<HazardType, HazardConfig> = {
     icon: Droplets,
     color: "#0891b2",
     levelSuggestions: RAINFALL_WARNINGS,
+  },
+  STRONG_WIND: {
+    label: "Strong winds",
+    icon: Wind,
+    color: "#0f766e",
+    levelSuggestions: [...TCWS_SIGNALS, "Gale Warning"],
+  },
+  DROUGHT: {
+    label: "Drought",
+    icon: Sun,
+    color: "#b45309",
+    levelSuggestions: ["El Niño Watch", "El Niño Alert", "Drought Advisory"],
   },
 };
 

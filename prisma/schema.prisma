@@ -21,6 +21,8 @@ enum HazardType {
   TYPHOON
   HEAVY_RAIN
   FLOOD
+  STRONG_WIND
+  DROUGHT
 }
 
 enum Severity {
@@ -107,14 +109,15 @@ model Member {
 // ─────────────────────────────────────────────
 
 model HazardAlert {
-  id            String      @id @default(cuid())
-  title         String
-  hazardType    HazardType
-  severity      Severity
-  officialLevel String? // "Alert Level 3", "Signal No. 2", "Orange Rainfall Warning"
-  description   String      @db.Text
-  status        AlertStatus @default(ACTIVE)
-  resolvedAt    DateTime?
+  id             String      @id @default(cuid())
+  title          String
+  hazardType     HazardType
+  severity       Severity
+  officialLevel  String? // "Alert Level 3", "Signal No. 2", "Orange Rainfall Warning"
+  description    String      @db.Text
+  status         AlertStatus @default(ACTIVE)
+  resolvedAt     DateTime?
+  idempotencyKey String?     @unique // one per New alert form; blocks a double-submitted alert
 
   zones      FarmZone[] // implicit many-to-many
   broadcasts Broadcast[]

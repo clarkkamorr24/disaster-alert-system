@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  composeMessageErrors,
   findUnfilledPlaceholders,
   pickDefaultTemplate,
   renderComposeMessage,
@@ -63,5 +64,23 @@ describe("findUnfilledPlaceholders", () => {
     expect(unfilledPlaceholderMessage(["{hazard}", "{zones}"])).toBe(
       "Replace {hazard}, {zones} with the actual text.",
     );
+  });
+});
+
+describe("composeMessageErrors", () => {
+  it("has nothing to say about an empty message", () => {
+    expect(composeMessageErrors("", "", true)).toEqual([]);
+  });
+
+  it("lists placeholders first, then the SMS rules", () => {
+    expect(composeMessageErrors("{hazard} 🌋", "Mi-isi FA: {hazard} 🌋", true)).toEqual([
+      "Replace {hazard} with the actual text.",
+      "Remove unsupported characters: 🌋",
+    ]);
+  });
+
+  it("blocks links only when asked", () => {
+    expect(composeMessageErrors("www.example.com/a", "Mi-isi FA: www.example.com/a", false)).toEqual([]);
+    expect(composeMessageErrors("www.example.com/a", "Mi-isi FA: www.example.com/a", true)).toHaveLength(1);
   });
 });

@@ -38,7 +38,7 @@ export function ResolveAlertButton({ id }: ResolveAlertButtonProps) {
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger render={<Button className="h-11 px-4 text-base" />}>
+      <AlertDialogTrigger render={<Button variant="outline" className="h-11 gap-2 px-4 text-[13px]" />}>
         <CircleCheck data-icon="inline-start" />
         Mark resolved
       </AlertDialogTrigger>

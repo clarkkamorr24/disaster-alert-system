@@ -2,42 +2,39 @@ import { MessageSquareText } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { cn } from "cn";
 
-import { HazardBadge } from "@/components/alerts/hazard-badge";
+import { HazardIconTile } from "@/components/alerts/hazard-icon-tile";
 import { ResolveAlertButton } from "@/components/alerts/resolve-alert-button";
-import { SeverityBadge } from "@/components/alerts/severity-badge";
-import { Badge } from "@/components/ui/badge";
+import { BroadcastRows } from "@/components/broadcast/broadcast-rows";
+import { StatusPill } from "@/components/layout/status-pill";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOfficer } from "@/lib/auth/dal";
+import { loadBroadcastSummaries, loadBroadcastZoneNames } from "@/lib/broadcast/summaries";
 import { formatManilaDateTime } from "@/lib/datetime";
 import { prisma } from "@/lib/db";
+import { HAZARD_TYPES, SEVERITIES } from "@/lib/domain/hazards";
+import { severityTone } from "@/lib/domain/status-tone";
 
 interface AlertDetailProps {
   params: Promise<{ id: string }>;
 }
 
-interface DetailRowProps {
-  label: string;
-  children: ReactNode;
-}
+/** More than any alert has broadcasts in practice; the list isn't paginated. */
+const BROADCAST_LIMIT = 50;
 
-function DetailRow({ label, children }: DetailRowProps) {
+function DetailCard({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
   return (
-    <div className="flex flex-col gap-1 sm:flex-row sm:gap-4">
-      <dt className="text-sm text-muted-foreground sm:w-32 sm:shrink-0">{label}</dt>
-      <dd>{children}</dd>
-    </div>
+    <section className={cn("flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-5", className)}>
+      <h2 className="font-heading text-base font-bold tracking-[-0.03em]">{title}</h2>
+      {children}
+    </section>
   );
 }
 
-/** The details, affected zones, and resolve action for one alert. Render inside `<Suspense>`. */
-export async function AlertDetail({ params }: AlertDetailProps) {
-  const { id } = await params;
-  await requireOfficer();
-
-  const alert = await prisma.hazardAlert.findUnique({
+function loadAlert(id: string) {
+  return prisma.hazardAlert.findUnique({
     where: { id },
     select: {
       id: true,
@@ -52,93 +49,117 @@ export async function AlertDetail({ params }: AlertDetailProps) {
       zones: { orderBy: { name: "asc" }, select: { id: true, name: true } },
     },
   });
+}
+
+async function loadBroadcasts(alertId: string) {
+  const [broadcasts, totalZones] = await Promise.all([
+    loadBroadcastSummaries(0, BROADCAST_LIMIT, { alertId }),
+    prisma.farmZone.count(),
+  ]);
+  const zoneNames = await loadBroadcastZoneNames(broadcasts.map((broadcast) => broadcast.id));
+  return { broadcasts, zoneNames, totalZones };
+}
+
+/** The header, details, affected zones, and broadcasts of one alert. Render inside `<Suspense>`. */
+export async function AlertDetail({ params }: AlertDetailProps) {
+  const { id } = await params;
+  await requireOfficer();
+
+  const [alert, { broadcasts, zoneNames, totalZones }] = await Promise.all([loadAlert(id), loadBroadcasts(id)]);
   if (!alert) notFound();
 
   const isActive = alert.status === "ACTIVE";
+  const times = [`Logged ${formatManilaDateTime(alert.createdAt)}`];
+  if (alert.resolvedAt) times.push(`Resolved ${formatManilaDateTime(alert.resolvedAt)}`);
 
   return (
     <>
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <HazardBadge type={alert.hazardType} className="text-base" />
-          <Badge variant={isActive ? "outline" : "secondary"}>{isActive ? "Active" : "Resolved"}</Badge>
+      <header className="flex flex-wrap items-start justify-between gap-4 rounded-xl border bg-card p-5">
+        <div className="flex min-w-0 items-start gap-3.5">
+          <HazardIconTile type={alert.hazardType} className="size-11 rounded-[10px] [&_svg]:size-[22px]" />
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="text-[11px] font-bold tracking-[.08em] text-muted-foreground uppercase">
+              {HAZARD_TYPES[alert.hazardType].label}
+            </p>
+            <h1 className="font-heading text-[22px] leading-tight font-bold tracking-[-0.03em]">{alert.title}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-2.5">
+              <StatusPill tone={severityTone(alert.severity)}>{SEVERITIES[alert.severity].label}</StatusPill>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-1.5 text-[11px] font-semibold",
+                  isActive ? "text-status-clear" : "text-status-neutral",
+                )}
+              >
+                <span aria-hidden="true" className="size-1.5 rounded-full bg-current" />
+                {isActive ? "Active" : "Resolved"}
+              </span>
+            </div>
+            <p className="text-[13px] text-muted-foreground">{times.join(" · ")}</p>
+          </div>
         </div>
-        <h1 className="text-2xl font-semibold">{alert.title}</h1>
-        <Link
-          href={`/broadcasts/new?alertId=${alert.id}`}
-          className={buttonVariants({ className: "h-11 self-start px-4 text-base" })}
-        >
-          <MessageSquareText data-icon="inline-start" />
-          Send SMS about this alert
-        </Link>
-      </div>
+        {isActive && (
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/broadcasts/new?alertId=${alert.id}`}
+              className={buttonVariants({ className: "h-11 gap-2 px-4 text-[13px]" })}
+            >
+              <MessageSquareText data-icon="inline-start" />
+              Send SMS about this alert
+            </Link>
+            <ResolveAlertButton id={alert.id} />
+          </div>
+        )}
+      </header>
 
-      <Card>
-        <CardContent>
-          <dl className="flex flex-col gap-4">
-            <DetailRow label="Severity">
-              <SeverityBadge severity={alert.severity} />
-            </DetailRow>
-            <DetailRow label="Official level">
-              {alert.officialLevel ?? <span className="text-muted-foreground">Not given</span>}
-            </DetailRow>
-            <DetailRow label="Logged">{formatManilaDateTime(alert.createdAt)}</DetailRow>
-            {alert.resolvedAt && (
-              <DetailRow label="Resolved">{formatManilaDateTime(alert.resolvedAt)}</DetailRow>
-            )}
-            {alert.description && (
-              <DetailRow label="Description">
-                <p className="whitespace-pre-wrap">{alert.description}</p>
-              </DetailRow>
-            )}
+      <div className="grid gap-4 md:grid-cols-2">
+        <DetailCard title="Details">
+          <dl className="flex flex-col gap-3 text-sm">
+            <div className="flex flex-col gap-0.5">
+              <dt className="text-xs text-muted-foreground">Official level</dt>
+              <dd>{alert.officialLevel ?? <span className="text-muted-foreground">Not given</span>}</dd>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <dt className="text-xs text-muted-foreground">Recommended precautions</dt>
+              <dd className="whitespace-pre-wrap">
+                {alert.description || <span className="text-muted-foreground">None recorded</span>}
+              </dd>
+            </div>
           </dl>
-        </CardContent>
-      </Card>
+        </DetailCard>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <h2 className="text-lg font-semibold">Affected zones</h2>
-          </CardTitle>
-          <CardDescription>
-            {alert.zones.length === 0
-              ? "The zones this alert named have since been deleted."
-              : `${alert.zones.length} ${alert.zones.length === 1 ? "zone" : "zones"}`}
-          </CardDescription>
-        </CardHeader>
-        {alert.zones.length > 0 && (
-          <CardContent>
-            <ul className="flex flex-col divide-y">
+        <DetailCard title="Affected zones">
+          {alert.zones.length === 0 ? (
+            <p className="text-sm text-muted-foreground">The zones this alert named have since been deleted.</p>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
               {alert.zones.map((zone) => (
                 <li key={zone.id}>
                   <Link
                     href={`/zones/${zone.id}`}
-                    className="flex min-h-11 items-center py-2 font-medium hover:underline"
+                    className="inline-flex min-h-11 items-center rounded-lg border border-accent-border bg-accent px-3 text-xs font-semibold text-primary hover:bg-[#e5f2e8] sm:min-h-[34px] dark:hover:bg-accent/70"
                   >
                     {zone.name}
                   </Link>
                 </li>
               ))}
             </ul>
-          </CardContent>
-        )}
-      </Card>
+          )}
+        </DetailCard>
+      </div>
 
-      {isActive && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2 className="text-lg font-semibold">Resolve</h2>
-            </CardTitle>
-            <CardDescription>
-              Once the hazard has passed, mark the alert resolved. It moves to the Resolved tab.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResolveAlertButton id={alert.id} />
-          </CardContent>
-        </Card>
-      )}
+      <section aria-labelledby="alert-broadcasts-heading" className="flex flex-col gap-3">
+        <h2 id="alert-broadcasts-heading" className="font-heading text-lg font-bold tracking-[-0.03em]">
+          Broadcasts
+        </h2>
+        {broadcasts.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed bg-card p-6 text-center">
+            <MessageSquareText className="size-6 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
+            <p className="text-sm text-muted-foreground">No SMS sent for this alert yet.</p>
+          </div>
+        ) : (
+          <BroadcastRows broadcasts={broadcasts} zoneNames={zoneNames} totalZones={totalZones} />
+        )}
+      </section>
     </>
   );
 }
@@ -147,9 +168,11 @@ export async function AlertDetail({ params }: AlertDetailProps) {
 export function AlertDetailSkeleton() {
   return (
     <>
-      <Skeleton className="h-16 w-72" />
-      <Skeleton className="h-48 rounded-xl" />
-      <Skeleton className="h-32 rounded-xl" />
+      <Skeleton className="h-36 rounded-xl" />
+      <div className="grid gap-4 md:grid-cols-2">
+        <Skeleton className="h-40 rounded-xl" />
+        <Skeleton className="h-40 rounded-xl" />
+      </div>
       <Skeleton className="h-32 rounded-xl" />
     </>
   );

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { BackToAlerts } from "@/components/alerts/back-to-alerts";
-import { NewAlertForm, NewAlertFormSkeleton } from "@/components/alerts/new-alert-form";
+import { NewAlert, NewAlertSkeleton } from "@/components/alerts/new-alert";
+import { BackLink } from "@/components/layout/back-link";
+import { PageHeader } from "@/components/layout/page-header";
 
 export const metadata: Metadata = {
   title: "New alert · Mi-isi Disaster Alert",
@@ -10,13 +11,17 @@ export const metadata: Metadata = {
 
 export default function NewAlertPage() {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <BackToAlerts />
-        <h1 className="text-2xl font-semibold">New alert</h1>
+    <div className="flex w-full flex-col pb-8">
+      <div className="pt-[22px]">
+        <BackLink href="/alerts" label="Hazard alerts" />
       </div>
-      <Suspense fallback={<NewAlertFormSkeleton />}>
-        <NewAlertForm />
+      <PageHeader
+        eyebrow="Association records"
+        title="New alert"
+        description="Write the alert and pick the zones. You confirm the recipients before anything is sent."
+      />
+      <Suspense fallback={<NewAlertSkeleton />}>
+        <NewAlert />
       </Suspense>
     </div>
   );
