@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import { Siren } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
+import { AppLogo } from "@/components/app-shell/app-logo";
 import { SignInForm } from "@/components/auth/sign-in-form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCurrentOfficer } from "@/lib/auth/dal";
 
@@ -21,21 +20,29 @@ async function SignInGate() {
 
 export default function SignInPage() {
   return (
-    <Card className="w-full max-w-sm border-t-4 border-t-primary">
-      <CardHeader className="justify-items-center text-center">
-        <div className="mb-2 flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Siren className="size-6" aria-hidden="true" />
+    <div className="flex w-full max-w-[380px] flex-col gap-6">
+      <div className="flex items-center gap-[11px]">
+        <AppLogo variant="brand" />
+        <div>
+          <p className="font-heading text-[17px] font-bold tracking-[-0.02em]">Mi-isi</p>
+          <p className="text-xs text-muted-foreground">Disaster Alert System</p>
         </div>
-        <CardTitle className="text-lg font-semibold">
-          <h1>Mi-isi Disaster Alert</h1>
-        </CardTitle>
-        <CardDescription>Officer sign-in</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Suspense fallback={<Skeleton className="h-55" />}>
+      </div>
+
+      <div className="flex flex-col gap-4 rounded-xl border bg-card p-6">
+        <div>
+          <h1 className="font-heading text-xl font-bold tracking-[-0.03em]">Officer sign in</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Only association officers can access this system.
+          </p>
+        </div>
+        <Suspense fallback={<Skeleton className="h-[226px]" />}>
           <SignInGate />
         </Suspense>
-      </CardContent>
-    </Card>
+        <p className="text-xs leading-normal text-muted-foreground">
+          Sessions expire after 30 minutes of inactivity.
+        </p>
+      </div>
+    </div>
   );
 }

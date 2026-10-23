@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { PAGE_ACTION_CLASS, PageHeader } from "@/components/layout/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { ZoneList, ZoneListSkeleton } from "@/components/zones/zone-list";
 
@@ -12,14 +13,18 @@ export const metadata: Metadata = {
 
 export default function ZonesPage() {
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Zones</h1>
-        <Link href="/zones/new" className={buttonVariants({ className: "h-11 px-4 text-base" })}>
-          <Plus data-icon="inline-start" />
-          New zone
-        </Link>
-      </div>
+    <div className="mx-auto w-full max-w-4xl">
+      <PageHeader
+        eyebrow="Association records"
+        title="Farm zones"
+        description="Monitor zone conditions, coordinates, members, and active hazards."
+        action={
+          <Link href="/zones/new" className={buttonVariants({ className: PAGE_ACTION_CLASS })}>
+            <Plus data-icon="inline-start" />
+            Add zone
+          </Link>
+        }
+      />
 
       <Suspense fallback={<ZoneListSkeleton />}>
         <ZoneList />

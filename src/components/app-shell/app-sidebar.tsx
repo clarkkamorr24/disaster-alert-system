@@ -1,16 +1,17 @@
 "use client";
 
-import { Siren } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 
-import { NAV_ITEMS } from "@/components/app-shell/nav-items";
+import { AppLogo } from "@/components/app-shell/app-logo";
+import { NAV_ITEMS, SETTINGS_ITEM, type NavItem } from "@/components/app-shell/nav-items";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -19,36 +20,44 @@ import {
 } from "@/components/ui/sidebar";
 
 interface AppSidebarProps {
+  /** Extra content after a nav item's label, keyed by its `href` (the Alerts count). */
+  badges?: Partial<Record<string, ReactNode>>;
   footer?: ReactNode;
 }
 
 interface NavMenuProps {
+  items: NavItem[];
   pathname: string | null;
+  badges?: AppSidebarProps["badges"];
   onNavigate: () => void;
 }
+
+/** Mockup nav item: 45px, 20px icon, white on a 12% tint with a green bar when active. */
+const NAV_BUTTON_CLASS =
+  "h-[45px] gap-3 rounded-[9px] px-[13px] text-sm font-medium text-sidebar-foreground hover:bg-white/[.07] hover:text-white active:bg-white/[.07] active:text-white data-active:bg-sidebar-accent data-active:font-medium data-active:text-white data-active:shadow-[inset_3px_0_0_var(--sidebar-indicator)] [&_svg]:size-5";
 
 function isActiveHref(pathname: string | null, href: string) {
   if (!pathname) return false;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function NavMenu({ pathname, onNavigate }: NavMenuProps) {
+function NavMenu({ items, pathname, badges, onNavigate }: NavMenuProps) {
   return (
-    <SidebarMenu>
-      {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+    <SidebarMenu className="gap-1.5">
+      {items.map(({ label, href, icon: Icon }) => {
         const isActive = isActiveHref(pathname, href);
 
         return (
           <SidebarMenuItem key={href}>
             <SidebarMenuButton
-              className="h-11"
+              className={NAV_BUTTON_CLASS}
               isActive={isActive}
-              tooltip={label}
               render={<Link href={href} aria-current={isActive ? "page" : undefined} />}
               onClick={onNavigate}
             >
-              <Icon aria-hidden="true" />
-              <span>{label}</span>
+              <Icon aria-hidden="true" strokeWidth={1.75} />
+              <span className="flex-1">{label}</span>
+              {badges?.[href]}
             </SidebarMenuButton>
           </SidebarMenuItem>
         );
@@ -59,11 +68,19 @@ function NavMenu({ pathname, onNavigate }: NavMenuProps) {
 
 // usePathname suspends on routes with unknown dynamic params under cacheComponents,
 // so it lives in its own Suspense boundary with an unhighlighted fallback.
-function ActiveNavMenu({ onNavigate }: Pick<NavMenuProps, "onNavigate">) {
-  return <NavMenu pathname={usePathname()} onNavigate={onNavigate} />;
+function ActiveNavMenu(props: Omit<NavMenuProps, "pathname">) {
+  return <NavMenu {...props} pathname={usePathname()} />;
 }
 
-export function AppSidebar({ footer }: AppSidebarProps) {
+function NavSection(props: Omit<NavMenuProps, "pathname">) {
+  return (
+    <Suspense fallback={<NavMenu {...props} pathname={null} />}>
+      <ActiveNavMenu {...props} />
+    </Suspense>
+  );
+}
+
+export function AppSidebar({ badges, footer }: AppSidebarProps) {
   const { isMobile, setOpenMobile } = useSidebar();
 
   function closeMobile() {
@@ -71,36 +88,36 @@ export function AppSidebar({ footer }: AppSidebarProps) {
   }
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              render={<Link href="/dashboard" />}
-              onClick={closeMobile}
-            >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-sidebar-accent text-sidebar-accent-foreground">
-                <Siren aria-hidden="true" />
-              </span>
-              <span className="flex min-w-0 flex-col leading-tight">
-                <span className="truncate font-semibold">Mi-isi Disaster Alert</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  Mi-isi Farmers Association
-                </span>
-              </span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <Sidebar collapsible="offcanvas" className="border-r-0">
+      <SidebarHeader className="min-h-[82px] justify-center border-b border-sidebar-border px-6 py-0">
+        <Link
+          href="/dashboard"
+          onClick={closeMobile}
+          className="flex items-center gap-[11px] rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+        >
+          <AppLogo variant="sidebar" />
+          <span className="flex flex-col">
+            <span className="font-heading text-[17px] font-bold tracking-[-0.02em] text-white">
+              Mi-isi
+            </span>
+            <span className="mt-px text-[11px] font-medium text-[#a9c4b2]">
+              Disaster Alert System
+            </span>
+          </span>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <Suspense fallback={<NavMenu pathname={null} onNavigate={closeMobile} />}>
-            <ActiveNavMenu onNavigate={closeMobile} />
-          </Suspense>
+        <SidebarGroup className="px-3.5 pt-[25px]">
+          <SidebarGroupLabel className="h-auto px-[13px] pb-2.5 text-[10px] font-bold tracking-[.12em] text-sidebar-muted uppercase">
+            Workspace
+          </SidebarGroupLabel>
+          <NavSection items={NAV_ITEMS} badges={badges} onNavigate={closeMobile} />
         </SidebarGroup>
       </SidebarContent>
-      {footer && <SidebarFooter>{footer}</SidebarFooter>}
+      <SidebarFooter className="gap-3 border-t border-sidebar-border px-3.5 pt-2.5 pb-[18px]">
+        <NavSection items={[SETTINGS_ITEM]} onNavigate={closeMobile} />
+        {footer && <div className="border-t border-sidebar-border pt-1">{footer}</div>}
+      </SidebarFooter>
     </Sidebar>
   );
 }

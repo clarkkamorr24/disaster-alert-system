@@ -9,9 +9,9 @@ export function TestModeBanner() {
   return (
     <div
       role="status"
-      className="flex items-center justify-center gap-2 border-b border-amber-300 bg-amber-100 px-4 py-2 text-sm font-medium text-amber-950 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
+      className="flex items-center justify-center gap-2 border-b border-status-advisory-border bg-status-advisory-soft px-4 py-2 text-[13px] font-semibold text-status-advisory"
     >
-      <FlaskConical className="size-4 shrink-0" aria-hidden="true" />
+      <FlaskConical className="size-4 shrink-0" aria-hidden="true" strokeWidth={1.75} />
       <span>TEST MODE: messages are not really sent</span>
     </div>
   );

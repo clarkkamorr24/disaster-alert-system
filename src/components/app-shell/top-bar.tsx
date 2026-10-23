@@ -1,27 +1,36 @@
-import { Plus, Siren } from "lucide-react";
-import Link from "next/link";
+import { Suspense } from "react";
 
-import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { buttonVariants } from "@/components/ui/button";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { OfficerChip } from "@/components/app-shell/account-menu";
+import { AppLogo } from "@/components/app-shell/app-logo";
+import { HeaderMenuButton } from "@/components/app-shell/header-menu-button";
+import {
+  NotificationsBell,
+  NotificationsBellFallback,
+} from "@/components/app-shell/notifications-bell";
+import { SearchButton } from "@/components/app-shell/search-button";
+import { Skeleton } from "@/components/ui/skeleton";
 
+/** Sticky 64px header: menu + logo below `md`, then search, notifications, and the officer chip. */
 export function TopBar() {
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b bg-sidebar px-4">
-      <div className="flex min-w-0 items-center gap-2">
-        <SidebarTrigger className="-ml-2 size-11" />
-        <div className="flex min-w-0 items-center gap-2 md:hidden">
-          <Siren className="size-5 shrink-0 text-primary" aria-hidden="true" />
-          <span className="truncate font-semibold">Mi-isi Disaster Alert</span>
-        </div>
+    <header className="sticky top-0 z-20 flex h-16 shrink-0 items-center gap-2.5 border-b border-[#e1e7e3] bg-white/92 px-[clamp(16px,2.4vw,32px)] backdrop-blur-md dark:border-border dark:bg-card/92">
+      <div className="flex min-w-0 items-center gap-2.5 md:hidden">
+        <HeaderMenuButton />
+        <span className="flex min-w-0 items-center gap-2 font-heading font-bold text-[#183323] dark:text-foreground">
+          <AppLogo variant="brand" size="sm" />
+          Mi-isi
+        </span>
       </div>
-      <div className="flex shrink-0 items-center gap-1">
-        {/* Icon-only below sm, so it fits next to the title on a 360px phone. */}
-        <Link href="/alerts/new" className={buttonVariants({ className: "h-11 min-w-11 gap-1.5 px-3 text-sm" })}>
-          <Plus aria-hidden="true" />
-          <span className="max-sm:sr-only">New alert</span>
-        </Link>
-        <ThemeToggle />
+      <div className="ml-auto flex items-center gap-2.5">
+        <SearchButton />
+        <Suspense fallback={<NotificationsBellFallback />}>
+          <NotificationsBell />
+        </Suspense>
+        <div className="ml-[3px] hidden border-l border-[#e3e8e5] pl-3 md:block dark:border-border">
+          <Suspense fallback={<Skeleton className="h-9 w-40" />}>
+            <OfficerChip />
+          </Suspense>
+        </div>
       </div>
     </header>
   );

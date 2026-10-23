@@ -27,8 +27,8 @@ import { PanelLeftIcon } from "lucide-react"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "18rem"
+const SIDEBAR_WIDTH = "15.5rem"
+const SIDEBAR_WIDTH_MOBILE = "15.5rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
@@ -187,7 +187,8 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="w-(--sidebar-width) bg-sidebar bg-(image:--sidebar-glow) p-0 text-sidebar-foreground data-[side=left]:w-(--sidebar-width) data-[side=left]:border-r-0 [&>button]:hidden"
+          overlayClassName="bg-[rgb(11_29_18/.48)] supports-backdrop-filter:backdrop-blur-none"
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -242,7 +243,7 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
+          className="flex size-full flex-col bg-sidebar bg-(image:--sidebar-glow) group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
         >
           {children}
         </div>
