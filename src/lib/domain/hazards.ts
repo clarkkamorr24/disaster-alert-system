@@ -1,4 +1,15 @@
-import { CloudFog, CloudRain, Droplets, Mountain, Waves, Wind } from "lucide-react";
+import {
+  CircleAlert,
+  CloudFog,
+  CloudRain,
+  Droplets,
+  Info,
+  Mountain,
+  OctagonAlert,
+  TriangleAlert,
+  Waves,
+  Wind,
+} from "lucide-react";
 import type { HazardType, Severity } from "@/generated/prisma/enums";
 import type { HazardConfig, SeverityConfig } from "@/types/hazard";
 
@@ -50,12 +61,12 @@ export const HAZARD_TYPES: Record<HazardType, HazardConfig> = {
   },
 };
 
-/** Label, color, and rank (1 = Low … 4 = Critical) for each severity. */
+/** Label, Lucide icon, color, and rank (1 = Low … 4 = Critical) for each severity. */
 export const SEVERITIES: Record<Severity, SeverityConfig> = {
-  LOW: { label: "Low", color: "#16a34a", rank: 1 },
-  MODERATE: { label: "Moderate", color: "#ca8a04", rank: 2 },
-  HIGH: { label: "High", color: "#ea580c", rank: 3 },
-  CRITICAL: { label: "Critical", color: "#dc2626", rank: 4 },
+  LOW: { label: "Low", icon: Info, color: "#16a34a", rank: 1 },
+  MODERATE: { label: "Moderate", icon: CircleAlert, color: "#ca8a04", rank: 2 },
+  HIGH: { label: "High", icon: TriangleAlert, color: "#ea580c", rank: 3 },
+  CRITICAL: { label: "Critical", icon: OctagonAlert, color: "#dc2626", rank: 4 },
 };
 
 /**

@@ -1,7 +1,8 @@
 import { Plus, Siren } from "lucide-react";
+import Link from "next/link";
 
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export function TopBar() {
@@ -15,10 +16,10 @@ export function TopBar() {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        <Button className="h-11 px-3 text-sm">
+        <Link href="/alerts/new" className={buttonVariants({ className: "h-11 px-3 text-sm" })}>
           <Plus data-icon="inline-start" />
           New alert
-        </Button>
+        </Link>
         <ThemeToggle />
       </div>
     </header>

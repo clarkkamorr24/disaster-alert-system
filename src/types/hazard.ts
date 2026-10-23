@@ -12,6 +12,7 @@ export interface HazardConfig {
 /** Display settings for one severity. */
 export interface SeverityConfig {
   label: string;
+  icon: LucideIcon;
   color: string;
   /** Higher is worse: Low = 1, Critical = 4. */
   rank: number;
