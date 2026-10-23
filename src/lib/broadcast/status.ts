@@ -37,3 +37,25 @@ export function deriveBroadcastStatus(counts: Record<RecipientStatus, number>): 
   if (counts.SENT > 0) return "PARTIAL";
   return "FAILED";
 }
+
+/**
+ * Works out what share of recipients were sent to.
+ *
+ * @param counts - The number of recipients in each status, across one or more broadcasts.
+ * @returns `SENT` ÷ all recipients (0–1), or `null` when there are no recipients.
+ */
+export function deliveryRate(counts: Record<RecipientStatus, number>): number | null {
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  return total === 0 ? null : counts.SENT / total;
+}
+
+/**
+ * Formats a {@link deliveryRate} as a percentage with one decimal.
+ *
+ * @param rate - A share from 0 to 1, or `null`.
+ * @returns Text such as `96.4%` or `0%`, or `—` for `null`.
+ */
+export function formatRate(rate: number | null): string {
+  if (rate === null) return "—";
+  return `${Number((rate * 100).toFixed(1))}%`;
+}

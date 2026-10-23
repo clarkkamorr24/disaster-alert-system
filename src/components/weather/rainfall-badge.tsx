@@ -3,7 +3,8 @@ import { cn } from "cn";
 
 import type { RainfallLevel } from "@/types/weather";
 
-const RAINFALL_DISPLAY: Record<RainfallLevel, { label: string; color: string }> = {
+/** Label and color for each rainfall level. */
+export const RAINFALL_DISPLAY: Record<RainfallLevel, { label: string; color: string }> = {
   NONE: { label: "No heavy rain", color: "#9ca3af" },
   YELLOW: { label: "Yellow rainfall", color: "#eab308" },
   ORANGE: { label: "Orange rainfall", color: "#f97316" },

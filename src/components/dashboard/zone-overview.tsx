@@ -1,8 +1,8 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, CloudOff, CloudSun } from "lucide-react";
 import Link from "next/link";
 
-import { SeverityBadge } from "@/components/alerts/severity-badge";
-import { SectionHeader } from "@/components/dashboard/section-header";
+import { SectionHeader, SectionHeaderSkeleton } from "@/components/dashboard/section-header";
+import { StatusPill } from "@/components/layout/status-pill";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -12,16 +12,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { RainfallBadge } from "@/components/weather/rainfall-badge";
+import { RAINFALL_DISPLAY } from "@/components/weather/rainfall-badge";
+import { WeatherIcon } from "@/components/weather/weather-icon";
 import { ZoneMapClient } from "@/components/zones/zone-map-client";
 import { requireOfficer } from "@/lib/auth/dal";
+import { formatManilaTime } from "@/lib/datetime";
 import { prisma } from "@/lib/db";
+import { SEVERITIES } from "@/lib/domain/hazards";
+import { severityTone } from "@/lib/domain/status-tone";
 import { computeZoneStatuses } from "@/lib/domain/zone-status";
-import { getZoneWeather } from "@/lib/weather/open-meteo";
+import { describeWeatherCode, forecastTimeToDate, getZoneWeather } from "@/lib/weather/open-meteo";
 import type { ZoneMapPoint } from "@/types/zone";
 
-/** Loads every zone with its member count, worst active alert, and rainfall level. */
-async function loadZonePoints(): Promise<ZoneMapPoint[]> {
+/**
+ * Loads every zone with its member count, worst active alert, and weather, plus
+ * the time of the oldest weather reading (`null` when none came back).
+ */
+async function loadZonePoints(): Promise<{ zones: ZoneMapPoint[]; weatherUpdatedAt: Date | null }> {
   const [zones, alerts] = await Promise.all([
     prisma.farmZone.findMany({
       orderBy: { name: "asc" },
@@ -47,121 +54,145 @@ async function loadZonePoints(): Promise<ZoneMapPoint[]> {
   const weather = await getZoneWeather(zones);
   const titleById = new Map(alerts.map((alert) => [alert.id, alert.title]));
 
-  return zones.map((zone, i) => ({
-    id: zone.id,
-    name: zone.name,
-    latitude: zone.latitude,
-    longitude: zone.longitude,
-    worstSeverity: statuses[i].worstSeverity,
-    activeAlertTitles: statuses[i].activeAlertIds.map((id) => titleById.get(id) ?? ""),
-    memberCount: zone._count.members,
-    rainfallLevel: weather[zone.id]?.rainfallLevel ?? null,
-  }));
+  // Open-Meteo times are fixed-length local timestamps, so they sort as strings.
+  const oldestFetchedAt = Object.values(weather)
+    .flatMap((entry) => (entry ? [entry.fetchedAt] : []))
+    .sort()[0];
+
+  return {
+    weatherUpdatedAt: oldestFetchedAt ? forecastTimeToDate(oldestFetchedAt) : null,
+    zones: zones.map((zone, i) => {
+      const current = weather[zone.id] ?? null;
+      return {
+        id: zone.id,
+        name: zone.name,
+        latitude: zone.latitude,
+        longitude: zone.longitude,
+        worstSeverity: statuses[i].worstSeverity,
+        activeAlertTitles: statuses[i].activeAlertIds.map((id) => titleById.get(id) ?? ""),
+        memberCount: zone._count.members,
+        rainfallLevel: current?.rainfallLevel ?? null,
+        weatherCode: current?.weatherCode ?? null,
+        maxRainNext24h: current?.maxRainNext24h ?? null,
+        condition: current ? describeWeatherCode(current.weatherCode) : null,
+      };
+    }),
+  };
 }
 
-function WorstSeverity({ zone }: { zone: ZoneMapPoint }) {
-  return zone.worstSeverity ? (
-    <SeverityBadge severity={zone.worstSeverity} />
-  ) : (
-    <span className="text-muted-foreground">Clear</span>
+function WeatherUpdated({ at }: { at: Date | null }) {
+  const Icon = at ? CloudSun : CloudOff;
+  return (
+    <span className="flex min-h-11 items-center gap-1.5 text-[11px] text-[#75827a] dark:text-muted-foreground">
+      <Icon className="size-[15px]" strokeWidth={1.75} aria-hidden="true" />
+      {at ? `Weather updated ${formatManilaTime(at)}` : "Weather unavailable"}
+    </span>
   );
 }
 
 function Rainfall({ zone }: { zone: ZoneMapPoint }) {
-  return zone.rainfallLevel ? (
-    <RainfallBadge level={zone.rainfallLevel} />
-  ) : (
-    <span className="text-sm text-muted-foreground">Weather unavailable</span>
+  if (zone.maxRainNext24h === null || zone.rainfallLevel === null) return <span>—</span>;
+  // A dot only for Yellow and higher, in the RainfallBadge color (an SVG fill, not an inline style).
+  const { label, color } = RAINFALL_DISPLAY[zone.rainfallLevel];
+  const showDot = zone.rainfallLevel !== "NONE";
+  return (
+    <span className="flex items-center gap-1.5 tabular-nums">
+      {showDot && (
+        <svg viewBox="0 0 8 8" className="size-[7px] shrink-0" aria-hidden="true">
+          <circle cx="4" cy="4" r="4" fill={color} />
+        </svg>
+      )}
+      {zone.maxRainNext24h.toFixed(1)} mm/h
+      {showDot && <span className="sr-only">({label})</span>}
+    </span>
   );
 }
 
 function ZoneTable({ zones }: { zones: ZoneMapPoint[] }) {
   return (
-    <div className="hidden rounded-xl border md:block">
-      <Table className="text-base">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="px-4">Zone</TableHead>
-            <TableHead className="px-4 text-right">Active members</TableHead>
-            <TableHead className="px-4">Worst severity</TableHead>
-            <TableHead className="px-4">Rainfall (next 24 h)</TableHead>
+    <Table className="min-w-[620px]">
+      <TableHeader>
+        <TableRow>
+          <TableHead className="px-[18px]">Farm zone</TableHead>
+          <TableHead>Members</TableHead>
+          <TableHead>Status</TableHead>
+          <TableHead>Current weather</TableHead>
+          <TableHead>Rainfall (next 24 h)</TableHead>
+          <TableHead>
+            <span className="sr-only">Open</span>
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {zones.map((zone) => (
+          <TableRow key={zone.id} className="relative">
+            <TableCell className="h-[54px] px-[18px] font-semibold text-foreground">
+              {/* The link covers the whole row, so a click anywhere on it opens the zone. */}
+              <Link
+                href={`/zones/${zone.id}`}
+                className="outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/25 focus-visible:after:ring-inset"
+              >
+                {zone.name}
+              </Link>
+            </TableCell>
+            <TableCell className="tabular-nums">{zone.memberCount}</TableCell>
+            <TableCell>
+              <StatusPill tone={severityTone(zone.worstSeverity)}>
+                {zone.worstSeverity ? SEVERITIES[zone.worstSeverity].label : "Clear"}
+              </StatusPill>
+            </TableCell>
+            <TableCell>
+              {zone.weatherCode === null ? (
+                "Weather unavailable"
+              ) : (
+                <span className="flex items-center gap-[7px] text-[#58675e] dark:text-table-foreground">
+                  <WeatherIcon code={zone.weatherCode} />
+                  {zone.condition}
+                </span>
+              )}
+            </TableCell>
+            <TableCell>
+              <Rainfall zone={zone} />
+            </TableCell>
+            <TableCell>
+              <ChevronRight className="ml-auto size-4 text-[#96a198]" aria-hidden="true" />
+            </TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {zones.map((zone) => (
-            <TableRow key={zone.id}>
-              <TableCell className="px-4 py-3">
-                <Link href={`/zones/${zone.id}`} className="font-medium text-primary hover:underline">
-                  {zone.name}
-                </Link>
-              </TableCell>
-              <TableCell className="px-4 py-3 text-right tabular-nums">{zone.memberCount}</TableCell>
-              <TableCell className="px-4 py-3">
-                <WorstSeverity zone={zone} />
-              </TableCell>
-              <TableCell className="px-4 py-3">
-                <Rainfall zone={zone} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
-function ZoneCards({ zones }: { zones: ZoneMapPoint[] }) {
-  return (
-    <ul className="flex flex-col gap-2 md:hidden">
-      {zones.map((zone) => (
-        <li key={zone.id}>
-          <Link
-            href={`/zones/${zone.id}`}
-            className="flex min-h-11 items-center justify-between gap-3 rounded-xl border bg-card p-4 hover:bg-muted"
-          >
-            <div className="flex min-w-0 flex-col gap-2">
-              <span className="truncate font-medium">{zone.name}</span>
-              <span className="text-sm">
-                {zone.memberCount} active {zone.memberCount === 1 ? "member" : "members"}
-              </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <WorstSeverity zone={zone} />
-                <Rainfall zone={zone} />
-              </div>
-            </div>
-            <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
-          </Link>
-        </li>
-      ))}
-    </ul>
+        ))}
+      </TableBody>
+    </Table>
   );
 }
 
 /**
- * The zone map colored by each zone's worst active alert, plus a zone table
- * with member counts and rainfall. Awaits the weather, so render it inside `<Suspense>`.
+ * "Zone monitoring": the zone map colored by each zone's worst active alert, above
+ * a table of members, status, and weather. Awaits the weather, so render it inside `<Suspense>`.
  */
 export async function ZoneOverview() {
   await requireOfficer();
-  const zones = await loadZonePoints();
+  const { zones, weatherUpdatedAt } = await loadZonePoints();
 
   return (
-    <section aria-labelledby="zones-heading" className="flex flex-col gap-3">
-      <SectionHeader id="zones-heading" title="Zones" viewAllHref="/zones" />
-      <ZoneMapClient zones={zones} />
-      {zones.length === 0 ? (
-        <p className="rounded-xl border border-dashed p-6 text-center text-muted-foreground">
-          No zones yet.{" "}
-          <Link href="/zones/new" className="font-medium text-primary hover:underline">
-            Add the first zone
-          </Link>
-        </p>
-      ) : (
-        <>
+    <section aria-labelledby="zones-heading">
+      <SectionHeader
+        id="zones-heading"
+        title="Zone monitoring"
+        description="Live status and weather across your farm zones"
+        aside={zones.length > 0 && <WeatherUpdated at={weatherUpdatedAt} />}
+      />
+      <div className="overflow-hidden rounded-xl border bg-card">
+        <ZoneMapClient zones={zones} className="h-[275px] border-b" />
+        {zones.length === 0 ? (
+          <p className="p-6 text-center text-sm text-muted-foreground">
+            No zones yet.{" "}
+            <Link href="/zones/new" className="font-medium text-link hover:underline">
+              Add the first zone
+            </Link>
+          </p>
+        ) : (
           <ZoneTable zones={zones} />
-          <ZoneCards zones={zones} />
-        </>
-      )}
+        )}
+      </div>
     </section>
   );
 }
@@ -169,10 +200,13 @@ export async function ZoneOverview() {
 /** Placeholder while {@link ZoneOverview} loads. */
 export function ZoneOverviewSkeleton() {
   return (
-    <div className="flex flex-col gap-3">
-      <Skeleton className="h-11 w-28" />
-      <Skeleton className="h-[280px] rounded-xl md:h-[360px]" />
-      <Skeleton className="h-48 rounded-xl" />
+    <div>
+      <SectionHeaderSkeleton />
+      <div className="overflow-hidden rounded-xl border bg-card">
+        <Skeleton className="h-[275px] rounded-none border-b" />
+        <Skeleton className="h-[39px] rounded-none" />
+        <div className="h-[162px]" />
+      </div>
     </div>
   );
 }

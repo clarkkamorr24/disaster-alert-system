@@ -1,58 +1,76 @@
-import { MapPin, MessageSquareText, Siren, Users, type LucideIcon } from "lucide-react";
+import { CircleAlert, MessageSquareText, Users } from "lucide-react";
 
-import { Card } from "@/components/ui/card";
+import { StatCard } from "@/components/layout/stat-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOfficer } from "@/lib/auth/dal";
+import { deliveryRate, emptyStatusCounts, formatRate } from "@/lib/broadcast/status";
 import { prisma } from "@/lib/db";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+function plural(count: number, one: string, many: string) {
+  return `${count.toLocaleString("en-US")} ${count === 1 ? one : many}`;
+}
 
-function loadCounts() {
-  const since = new Date(Date.now() - 30 * DAY_MS);
-  return Promise.all([
+async function loadStats() {
+  const [activeAlerts, criticalAlerts, activeMembers, zones, groups] = await Promise.all([
     prisma.hazardAlert.count({ where: { status: "ACTIVE" } }),
-    prisma.farmZone.count(),
+    prisma.hazardAlert.count({ where: { status: "ACTIVE", severity: "CRITICAL" } }),
     prisma.member.count({ where: { isActive: true } }),
-    prisma.broadcast.count({ where: { createdAt: { gte: since } } }),
+    prisma.farmZone.count(),
+    prisma.broadcastRecipient.groupBy({ by: ["status"], _count: { _all: true } }),
   ]);
+
+  const counts = emptyStatusCounts();
+  for (const group of groups) counts[group.status] = group._count._all;
+  return { activeAlerts, criticalAlerts, activeMembers, zones, counts };
 }
 
-function StatCard({ label, value, icon: Icon }: { label: string; value: number; icon: LucideIcon }) {
-  return (
-    <Card className="flex-row items-start justify-between gap-2 px-4">
-      <div className="flex min-w-0 flex-col gap-1">
-        <span className="text-sm text-muted-foreground">{label}</span>
-        <span className="text-3xl font-semibold tabular-nums">{value.toLocaleString("en-PH")}</span>
-      </div>
-      <span className="hidden size-10 shrink-0 items-center sm:flex justify-center rounded-lg bg-accent text-accent-foreground">
-        <Icon className="size-5" aria-hidden="true" />
-      </span>
-    </Card>
-  );
-}
-
-/** Active alerts, zones, active members, and broadcasts in the last 30 days. Render inside `<Suspense>`. */
+/**
+ * Three of the four dashboard stat cards (alerts, members, delivery rate), as a
+ * fragment for the page's stat grid. Render inside `<Suspense>`.
+ */
 export async function StatCards() {
   await requireOfficer();
-  const [activeAlerts, zones, activeMembers, recentBroadcasts] = await loadCounts();
+  const { activeAlerts, criticalAlerts, activeMembers, zones, counts } = await loadStats();
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <StatCard label="Active alerts" value={activeAlerts} icon={Siren} />
-      <StatCard label="Farm zones" value={zones} icon={MapPin} />
-      <StatCard label="Active members" value={activeMembers} icon={Users} />
-      <StatCard label="Broadcasts (last 30 days)" value={recentBroadcasts} icon={MessageSquareText} />
-    </div>
+    <>
+      <StatCard
+        label="Active alerts"
+        value={activeAlerts.toLocaleString("en-US")}
+        hint={`${criticalAlerts.toLocaleString("en-US")} critical`}
+        icon={CircleAlert}
+        tone="critical"
+      />
+      <StatCard
+        label="Active members"
+        value={activeMembers.toLocaleString("en-US")}
+        hint={plural(zones, "farm zone", "farm zones")}
+        icon={Users}
+        tone="clear"
+      />
+      <StatCard
+        label="Delivery rate"
+        value={formatRate(deliveryRate(counts))}
+        hint={`${(counts.FAILED + counts.SKIPPED).toLocaleString("en-US")} not reached`}
+        icon={MessageSquareText}
+        tone="info"
+      />
+    </>
   );
+}
+
+/** One stat card's placeholder. */
+export function StatCardSkeleton() {
+  return <Skeleton className="h-[112px] rounded-xl" />;
 }
 
 /** Placeholder while {@link StatCards} loads. */
 export function StatCardsSkeleton() {
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {[0, 1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-24 rounded-xl" />
-      ))}
-    </div>
+    <>
+      <StatCardSkeleton />
+      <StatCardSkeleton />
+      <StatCardSkeleton />
+    </>
   );
 }

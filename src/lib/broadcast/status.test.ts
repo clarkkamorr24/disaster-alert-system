@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { BROADCAST_STATUS_LABELS, deriveBroadcastStatus, emptyStatusCounts } from "@/lib/broadcast/status";
+import {
+  BROADCAST_STATUS_LABELS,
+  deliveryRate,
+  deriveBroadcastStatus,
+  emptyStatusCounts,
+  formatRate,
+} from "@/lib/broadcast/status";
 
 describe("deriveBroadcastStatus", () => {
   it("is SENDING while any message is pending or retrying", () => {
@@ -38,5 +44,30 @@ it("labels every derived status", () => {
     COMPLETED: "Completed",
     PARTIAL: "Partially delivered",
     FAILED: "Failed",
+  });
+});
+
+describe("deliveryRate", () => {
+  it("is null without recipients", () => {
+    expect(deliveryRate(emptyStatusCounts())).toBeNull();
+  });
+
+  it("is SENT over every recipient", () => {
+    const rate = deliveryRate({ PENDING: 0, RETRYING: 0, SENT: 27, FAILED: 0, SKIPPED: 1 });
+    expect(rate).toBeCloseTo(0.9643, 4);
+    expect(formatRate(rate)).toBe("96.4%");
+  });
+
+  it("is 0% when every number was skipped", () => {
+    const rate = deliveryRate({ PENDING: 0, RETRYING: 0, SENT: 0, FAILED: 0, SKIPPED: 3 });
+    expect(rate).toBe(0);
+    expect(formatRate(rate)).toBe("0%");
+  });
+});
+
+describe("formatRate", () => {
+  it("shows a dash for no rate and drops a trailing .0", () => {
+    expect(formatRate(null)).toBe("—");
+    expect(formatRate(1)).toBe("100%");
   });
 });

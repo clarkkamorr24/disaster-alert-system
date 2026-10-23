@@ -29,6 +29,9 @@
   --color-border: var(--border);
   --color-row-border: var(--row-border);
   --color-table-head: var(--table-head);
+  --color-table-head-foreground: var(--table-head-foreground);
+  --color-table-foreground: var(--table-foreground);
+  --color-row-hover: var(--row-hover);
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
@@ -59,6 +62,13 @@
   --color-status-advisory: var(--status-advisory);
   --color-status-advisory-soft: var(--status-advisory-soft);
   --color-status-advisory-border: var(--status-advisory-border);
+  --color-status-info: var(--status-info);
+  --color-status-info-soft: var(--status-info-soft);
+  --color-marker-critical: var(--marker-critical);
+  --color-marker-high: var(--marker-high);
+  --color-marker-moderate: var(--marker-moderate);
+  --color-marker-low: var(--marker-low);
+  --color-marker-clear: var(--marker-clear);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -92,6 +102,9 @@
   --ring: #2f8a50;
   --row-border: #edf0ee;
   --table-head: #fafbfa;
+  --table-head-foreground: #869189;
+  --table-foreground: #65736a;
+  --row-hover: #fafcfa;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -123,6 +136,14 @@
   --status-advisory: #70531e;
   --status-advisory-soft: #fff4d9;
   --status-advisory-border: #f1dfae;
+  --status-info: #2563a6;
+  --status-info-soft: #edf5fc;
+  /* Map pins, the map legend, and alert card accents; the same in both themes. */
+  --marker-critical: #dc3f35;
+  --marker-high: #ea580c;
+  --marker-moderate: #d69222;
+  --marker-low: #6f8074;
+  --marker-clear: #6f8074;
 }
 
 .dark {
@@ -149,6 +170,9 @@
   --ring: #3fa36a;
   --row-border: #1d2620;
   --table-head: #151e18;
+  --table-head-foreground: #8a988f;
+  --table-foreground: #b3bfb7;
+  --row-hover: #18221c;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -180,6 +204,13 @@
   --status-advisory: #f5d07a;
   --status-advisory-soft: color-mix(in srgb, #f5d07a 12%, var(--background));
   --status-advisory-border: color-mix(in srgb, #f5d07a 28%, var(--background));
+  --status-info: #8cbcf0;
+  --status-info-soft: color-mix(in srgb, #8cbcf0 15%, var(--card));
+  --marker-critical: #dc3f35;
+  --marker-high: #ea580c;
+  --marker-moderate: #d69222;
+  --marker-low: #6f8074;
+  --marker-clear: #6f8074;
 }
 
 @layer base {
@@ -205,4 +236,50 @@ body .leaflet-container {
 .leaflet-container .leaflet-popup-tip {
   background: var(--popover);
   color: var(--popover-foreground);
+}
+
+/* The dashboard map: paler tiles, like the mockup's map. */
+.zone-map .leaflet-tile-pane {
+  filter: saturate(0.45) brightness(1.05);
+}
+
+.dark .zone-map .leaflet-tile-pane {
+  filter: saturate(0.45) brightness(0.75);
+}
+
+/* Zone pins: a teardrop with a white border, its tip on the zone's coordinates. */
+.zone-map .zone-pin {
+  filter: drop-shadow(0 3px 4px rgb(26 47 33 / 0.16));
+}
+
+.zone-map .zone-pin::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 4px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: var(--pin-color);
+  transform: rotate(-45deg);
+}
+
+.zone-pin--critical { --pin-color: var(--marker-critical); }
+.zone-pin--high { --pin-color: var(--marker-high); }
+.zone-pin--moderate { --pin-color: var(--marker-moderate); }
+.zone-pin--low { --pin-color: var(--marker-low); }
+.zone-pin--clear { --pin-color: var(--marker-clear); }
+
+/* The zone name next to each pin (a permanent Leaflet tooltip). */
+.leaflet-container .zone-pin-label {
+  padding: 5px 8px;
+  color: #26342b;
+  border: 1px solid rgb(214 223 216 / 0.9);
+  border-radius: 6px;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: none;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.leaflet-container .zone-pin-label::before {
+  display: none;
 }
