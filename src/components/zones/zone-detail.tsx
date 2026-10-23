@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WeatherCard, WeatherCardSkeleton } from "@/components/weather/weather-card";
 import { DeleteZoneButton } from "@/components/zones/delete-zone-button";
 import { ZoneForm } from "@/components/zones/zone-form";
 import { requireOfficer } from "@/lib/auth/dal";
@@ -50,6 +52,10 @@ export async function ZoneDetail({ params }: ZoneDetailProps) {
           />
         </CardContent>
       </Card>
+
+      <Suspense fallback={<WeatherCardSkeleton />}>
+        <WeatherCard zone={{ id: zone.id, latitude: zone.latitude, longitude: zone.longitude }} />
+      </Suspense>
 
       <Card>
         <CardHeader>
