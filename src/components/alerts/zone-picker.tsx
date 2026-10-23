@@ -9,10 +9,21 @@ interface ZonePickerProps {
   onChange: (zoneIds: string[]) => void;
   /** The id of the field's error message, when there is one. */
   errorId?: string;
+  /** The id of the element that labels the group. */
+  labelId?: string;
+  /** Extra text shown after a zone's name, keyed by zone id. */
+  hints?: Record<string, string>;
 }
 
 /** An "All zones" checkbox above one checkbox per zone. */
-export function ZonePicker({ zones, selected, onChange, errorId }: ZonePickerProps) {
+export function ZonePicker({
+  zones,
+  selected,
+  onChange,
+  errorId,
+  labelId = "alert-zones-label",
+  hints,
+}: ZonePickerProps) {
   const allSelected = selected.length === zones.length;
   const someSelected = selected.length > 0 && !allSelected;
 
@@ -24,7 +35,7 @@ export function ZonePicker({ zones, selected, onChange, errorId }: ZonePickerPro
   return (
     <div
       role="group"
-      aria-labelledby="alert-zones-label"
+      aria-labelledby={labelId}
       aria-describedby={errorId}
       className="flex flex-col rounded-lg border"
     >
@@ -51,6 +62,9 @@ export function ZonePicker({ zones, selected, onChange, errorId }: ZonePickerPro
               className="size-5"
             />
             {zone.name}
+            {hints?.[zone.id] && (
+              <span className="ml-auto text-sm text-muted-foreground">{hints[zone.id]}</span>
+            )}
           </label>
         ))}
       </div>

@@ -51,3 +51,20 @@ export function formatPhoneForDisplay(e164: string): string {
   if (!match) return e164;
   return `0${match[1]} ${match[2]} ${match[3]}`;
 }
+
+/**
+ * Converts a number to `+639XXXXXXXXX` when it is a Philippine mobile number,
+ * and returns anything else unchanged. Use it to match a number a provider
+ * reports (often `09…`) against the stored canonical one.
+ *
+ * @param phone - A number in any format {@link normalizePhilippineMobile} accepts.
+ * @returns The canonical number, or `phone` as given if it can't be normalized.
+ *
+ * @example
+ * toCanonicalPhone("09171234567"); // "+639171234567"
+ * toCanonicalPhone("12345"); // "12345"
+ */
+export function toCanonicalPhone(phone: string): string {
+  const result = normalizePhilippineMobile(phone);
+  return result.ok ? result.e164 : phone;
+}

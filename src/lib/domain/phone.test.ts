@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatPhoneForDisplay,
   normalizePhilippineMobile,
+  toCanonicalPhone,
 } from "@/lib/domain/phone";
 
 describe("normalizePhilippineMobile", () => {
@@ -39,5 +40,15 @@ describe("normalizePhilippineMobile", () => {
 describe("formatPhoneForDisplay", () => {
   it("formats a canonical number in local format", () => {
     expect(formatPhoneForDisplay("+639171234567")).toBe("0917 123 4567");
+  });
+});
+
+describe("toCanonicalPhone", () => {
+  it("normalizes a Philippine mobile number", () => {
+    expect(toCanonicalPhone("0917 123 4567")).toBe("+639171234567");
+  });
+
+  it("returns anything else unchanged", () => {
+    expect(toCanonicalPhone("12345")).toBe("12345");
   });
 });
