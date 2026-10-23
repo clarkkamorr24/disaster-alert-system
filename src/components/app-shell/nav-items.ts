@@ -1,8 +1,8 @@
 import {
   FileText,
-  LayoutDashboard,
+  LayoutGrid,
   Map,
-  Send,
+  MessageSquareText,
   Settings,
   TriangleAlert,
   Users,
@@ -15,12 +15,15 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
+/** The sidebar's "Workspace" links, in order. */
 export const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
   { label: "Alerts", href: "/alerts", icon: TriangleAlert },
   { label: "Zones", href: "/zones", icon: Map },
   { label: "Members", href: "/members", icon: Users },
-  { label: "Broadcasts", href: "/broadcasts", icon: Send },
+  { label: "Broadcasts", href: "/broadcasts", icon: MessageSquareText },
   { label: "Templates", href: "/templates", icon: FileText },
-  { label: "Settings", href: "/settings", icon: Settings },
 ];
+
+/** Shown on its own at the bottom of the sidebar, above the account. */
+export const SETTINGS_ITEM: NavItem = { label: "Settings", href: "/settings", icon: Settings };

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { PAGE_ACTION_CLASS, PageHeader } from "@/components/layout/page-header";
 import { MemberList, MemberListSkeleton } from "@/components/members/member-list";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -16,23 +17,27 @@ export default function MembersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Members</h1>
-        <div className="flex flex-wrap justify-end gap-2">
-          <Link
-            href="/members/import"
-            className={buttonVariants({ variant: "outline", className: "h-11 px-4 text-base" })}
-          >
-            <Upload data-icon="inline-start" />
-            Import CSV
-          </Link>
-          <Link href="/members/new" className={buttonVariants({ className: "h-11 px-4 text-base" })}>
-            <Plus data-icon="inline-start" />
-            New member
-          </Link>
-        </div>
-      </div>
+    <div className="mx-auto w-full max-w-5xl">
+      <PageHeader
+        eyebrow="Association records"
+        title="Members"
+        description="Manage farmer contact details, home zones, and consent records."
+        action={
+          <>
+            <Link
+              href="/members/import"
+              className={buttonVariants({ variant: "outline", className: PAGE_ACTION_CLASS })}
+            >
+              <Upload data-icon="inline-start" />
+              Import CSV
+            </Link>
+            <Link href="/members/new" className={buttonVariants({ className: PAGE_ACTION_CLASS })}>
+              <Plus data-icon="inline-start" />
+              Add member
+            </Link>
+          </>
+        }
+      />
 
       <Suspense fallback={<MemberListSkeleton />}>
         <MemberList searchParams={searchParams} />

@@ -28,7 +28,7 @@ export function SignInForm() {
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>
       <div className="flex flex-col gap-2">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email" className="text-sm font-semibold">Email</Label>
         <Input
           id="email"
           name="email"
@@ -38,7 +38,7 @@ export function SignInForm() {
           defaultValue={state?.email}
           aria-invalid={emailError ? true : undefined}
           aria-describedby={emailError ? "email-error" : undefined}
-          className="h-11"
+          className="h-[42px] px-3"
         />
         {emailError && (
           <p id="email-error" className="text-sm text-destructive">
@@ -48,7 +48,7 @@ export function SignInForm() {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="password">Password</Label>
+        <Label htmlFor="password" className="text-sm font-semibold">Password</Label>
         <Input
           id="password"
           name="password"
@@ -57,7 +57,7 @@ export function SignInForm() {
           required
           aria-invalid={passwordError ? true : undefined}
           aria-describedby={passwordError ? "password-error" : undefined}
-          className="h-11"
+          className="h-[42px] px-3"
         />
         {passwordError && (
           <p id="password-error" className="text-sm text-destructive">
@@ -72,7 +72,7 @@ export function SignInForm() {
         </p>
       )}
 
-      <Button type="submit" disabled={pending} className="h-11 w-full text-base">
+      <Button type="submit" disabled={pending} className="h-11 w-full text-[13px]">
         {pending ? "Signing in…" : "Sign in"}
       </Button>
     </form>

@@ -1,20 +1,24 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-// Auth.js uses the __Secure- name over HTTPS and the plain name over HTTP (local dev).
-const SESSION_COOKIES = ["authjs.session-token", "__Secure-authjs.session-token"];
+import { auth } from "@/auth";
 
 /**
- * Optimistic check: sends visitors without a session cookie to sign-in.
- * The real check (database lookup and session version) is `requireOfficer()`.
+ * Runs before every app page and its Server Action POSTs.
+ *
+ * Wrapping it in `auth()` decodes the session JWT and re-issues the cookie
+ * with a fresh 30-minute expiry, so the session only ends after 30 minutes
+ * without activity. Visitors without a valid session go to sign-in.
+ *
+ * This is still an optimistic check: the database lookup and the session
+ * version (password change sign-out) are checked by `requireOfficer()`.
  */
-export function proxy(request: NextRequest) {
-  const hasSession = SESSION_COOKIES.some((name) => request.cookies.has(name));
-  if (hasSession) return NextResponse.next();
+export const proxy = auth((request) => {
+  if (request.auth) return NextResponse.next();
 
   const signInUrl = new URL("/sign-in", request.url);
   signInUrl.searchParams.set("callbackUrl", request.nextUrl.pathname);
   return NextResponse.redirect(signInUrl);
-}
+});
 
 export const config = {
   matcher: [

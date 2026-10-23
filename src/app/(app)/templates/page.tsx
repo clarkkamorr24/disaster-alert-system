@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { PAGE_ACTION_CLASS, PageHeader } from "@/components/layout/page-header";
 import { TemplateList, TemplateListSkeleton } from "@/components/templates/template-list";
 import { buttonVariants } from "@/components/ui/button";
 
@@ -12,14 +13,18 @@ export const metadata: Metadata = {
 
 export default function TemplatesPage() {
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Templates</h1>
-        <Link href="/templates/new" className={buttonVariants({ className: "h-11 px-4 text-base" })}>
-          <Plus data-icon="inline-start" />
-          New template
-        </Link>
-      </div>
+    <div className="mx-auto w-full max-w-4xl">
+      <PageHeader
+        eyebrow="Association records"
+        title="Message templates"
+        description="Create reusable messages for faster, consistent emergency broadcasts."
+        action={
+          <Link href="/templates/new" className={buttonVariants({ className: PAGE_ACTION_CLASS })}>
+            <Plus data-icon="inline-start" />
+            New template
+          </Link>
+        }
+      />
 
       <Suspense fallback={<TemplateListSkeleton />}>
         <TemplateList />
