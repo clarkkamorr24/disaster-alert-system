@@ -16,9 +16,10 @@ export function TopBar() {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        <Link href="/alerts/new" className={buttonVariants({ className: "h-11 px-3 text-sm" })}>
-          <Plus data-icon="inline-start" />
-          New alert
+        {/* Icon-only below sm, so it fits next to the title on a 360px phone. */}
+        <Link href="/alerts/new" className={buttonVariants({ className: "h-11 min-w-11 gap-1.5 px-3 text-sm" })}>
+          <Plus aria-hidden="true" />
+          <span className="max-sm:sr-only">New alert</span>
         </Link>
         <ThemeToggle />
       </div>

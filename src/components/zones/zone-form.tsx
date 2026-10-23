@@ -1,16 +1,25 @@
 "use client";
 
-import { useActionState } from "react";
+import { MapPin } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useActionState, useState } from "react";
 import { toast } from "sonner";
 
 import { createZone, updateZone } from "@/actions/zones";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { isRedirectError } from "@/lib/redirect-error";
 import type { ActionResult } from "@/types/action-result";
 import type { ZoneFormValues } from "@/types/zone";
+
+// Leaflet touches `window` on import, so the picker only loads in the browser.
+const ZoneLocationPicker = dynamic(() => import("./zone-location-picker"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[280px] rounded-xl" />,
+});
 
 interface ZoneFormProps {
   /** The zone to edit; omit to create a new one. */
@@ -37,6 +46,13 @@ function readValues(formData: FormData): FieldValues {
     latitude: String(formData.get("latitude") ?? ""),
     longitude: String(formData.get("longitude") ?? ""),
   };
+}
+
+/** The coordinates as a map point, or `null` unless both inputs hold a number. */
+function toPoint(latitude: string, longitude: string): [number, number] | null {
+  if (latitude.trim() === "" || longitude.trim() === "") return null;
+  const point: [number, number] = [Number(latitude), Number(longitude)];
+  return point.every(Number.isFinite) ? point : null;
 }
 
 function initialValues(zone: ZoneFormValues | undefined): FieldValues {
@@ -69,6 +85,15 @@ export function ZoneForm({ zone }: ZoneFormProps) {
   const failed = state && !state.result.success ? state : null;
   const fieldErrors = failed && !failed.result.success ? failed.result.fieldErrors : undefined;
   const values = failed?.values ?? initialValues(zone);
+  // Controlled so Pick on map can fill them; React's form reset leaves controlled inputs alone.
+  const [latitude, setLatitude] = useState(() => initialValues(zone).latitude);
+  const [longitude, setLongitude] = useState(() => initialValues(zone).longitude);
+  const [showPicker, setShowPicker] = useState(false);
+
+  function pick(lat: number, lng: number) {
+    setLatitude(lat.toFixed(6));
+    setLongitude(lng.toFixed(6));
+  }
 
   const nameError = fieldErrors?.name?.[0];
   const descriptionError = fieldErrors?.description?.[0];
@@ -126,7 +151,8 @@ export function ZoneForm({ zone }: ZoneFormProps) {
               step="any"
               inputMode="decimal"
               required
-              defaultValue={values.latitude}
+              value={latitude}
+              onChange={(event) => setLatitude(event.target.value)}
               aria-invalid={latitudeError ? true : undefined}
               aria-describedby={
                 latitudeError ? "zone-coordinates-help zone-latitude-error" : "zone-coordinates-help"
@@ -149,7 +175,8 @@ export function ZoneForm({ zone }: ZoneFormProps) {
               step="any"
               inputMode="decimal"
               required
-              defaultValue={values.longitude}
+              value={longitude}
+              onChange={(event) => setLongitude(event.target.value)}
               aria-invalid={longitudeError ? true : undefined}
               aria-describedby={
                 longitudeError
@@ -168,6 +195,25 @@ export function ZoneForm({ zone }: ZoneFormProps) {
         <p id="zone-coordinates-help" className="text-sm text-muted-foreground">
           Example: 13.1765, 123.6602
         </p>
+        <Button
+          type="button"
+          variant="outline"
+          aria-expanded={showPicker}
+          onClick={() => setShowPicker((shown) => !shown)}
+          className="h-11 self-start px-4 text-base"
+        >
+          <MapPin data-icon="inline-start" />
+          {showPicker ? "Hide map" : "Pick on map"}
+        </Button>
+        {showPicker && (
+          // isolate keeps Leaflet's z-indexes (400+) below the mobile sidebar sheet (z-50).
+          <div className="isolate flex flex-col gap-2">
+            <ZoneLocationPicker point={toPoint(latitude, longitude)} onPick={pick} />
+            <p className="text-sm text-muted-foreground">
+              Tap the center of the zone to fill in the coordinates.
+            </p>
+          </div>
+        )}
       </fieldset>
 
       <Button type="submit" disabled={pending} className="h-11 self-start px-5 text-base">
