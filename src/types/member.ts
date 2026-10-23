@@ -27,3 +27,16 @@ export interface MemberListFilters {
   /** 1-based. */
   page: number;
 }
+
+/** A row of a member CSV that can't be imported. */
+export interface ImportRowError {
+  /** 1-based spreadsheet row; the header is row 1. */
+  row: number;
+  message: string;
+}
+
+/** What checking a member CSV found. */
+export interface MemberImportPreview {
+  validCount: number;
+  errors: ImportRowError[];
+}
