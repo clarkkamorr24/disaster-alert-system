@@ -1,3 +1,4 @@
+import { MessageSquareText } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
@@ -6,6 +7,7 @@ import { HazardBadge } from "@/components/alerts/hazard-badge";
 import { ResolveAlertButton } from "@/components/alerts/resolve-alert-button";
 import { SeverityBadge } from "@/components/alerts/severity-badge";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOfficer } from "@/lib/auth/dal";
@@ -62,6 +64,13 @@ export async function AlertDetail({ params }: AlertDetailProps) {
           <Badge variant={isActive ? "outline" : "secondary"}>{isActive ? "Active" : "Resolved"}</Badge>
         </div>
         <h1 className="text-2xl font-semibold">{alert.title}</h1>
+        <Link
+          href={`/broadcasts/new?alertId=${alert.id}`}
+          className={buttonVariants({ className: "h-11 self-start px-4 text-base" })}
+        >
+          <MessageSquareText data-icon="inline-start" />
+          Send SMS about this alert
+        </Link>
       </div>
 
       <Card>

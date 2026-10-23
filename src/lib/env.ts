@@ -2,13 +2,16 @@ import { z } from "zod";
 
 const value = z.string().trim();
 
+/** The sender ID UniSMS uses when none is registered; it cannot send links or reach Smart, TNT, or Sun. */
+export const DEFAULT_SENDER_ID = "Unisoft";
+
 const envSchema = z
   .object({
     DATABASE_URL: value,
     AUTH_SECRET: value,
     SMS_DRIVER: value.pipe(z.enum(["unisms", "fake"])).default("fake"),
     UNISMS_API_KEY: value.optional(),
-    UNISMS_SENDER_ID: value.default("Unisoft"),
+    UNISMS_SENDER_ID: value.default(DEFAULT_SENDER_ID),
     UNISMS_WEBHOOK_SECRET: value.optional(),
     SMS_MESSAGE_PREFIX: value.default("Mi-isi FA:"),
   })

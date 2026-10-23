@@ -4,10 +4,8 @@ import { headers } from "next/headers";
 import { CopyButton } from "@/components/settings/copy-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireOfficer } from "@/lib/auth/dal";
-import { getEnv } from "@/lib/env";
+import { DEFAULT_SENDER_ID, getEnv } from "@/lib/env";
 import { getSmsGateway, isTestMode } from "@/lib/sms";
-
-const DEFAULT_SENDER_ID = "Unisoft";
 
 /** Builds `<origin>/api/webhooks/unisms` from the request headers. */
 async function getWebhookUrl(): Promise<string> {
