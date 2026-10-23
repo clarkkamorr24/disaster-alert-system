@@ -29,6 +29,12 @@ export interface ZoneMapPoint {
   worstSeverity: Severity | null;
   activeAlertTitles: string[];
   memberCount: number;
-  /** `null` when the weather is unavailable. */
+  /** `null` when the weather is unavailable (also for the fields below). */
   rainfallLevel: RainfallLevel | null;
+  /** WMO weather interpretation code. */
+  weatherCode: number | null;
+  /** Heaviest hourly rain in the next 24 hours, in mm. */
+  maxRainNext24h: number | null;
+  /** The current weather in plain words, such as `Rain`. */
+  condition: string | null;
 }

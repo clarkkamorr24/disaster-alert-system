@@ -12,6 +12,12 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-PH", {
   timeZone: DISPLAY_TIME_ZONE,
 });
 
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: DISPLAY_TIME_ZONE,
+});
+
 /**
  * Formats a date as a calendar day in Philippine time.
  *
@@ -36,4 +42,17 @@ export function formatManilaDate(date: Date): string {
  */
 export function formatManilaDateTime(date: Date): string {
   return dateTimeFormatter.format(date);
+}
+
+/**
+ * Formats a time of day in Philippine time.
+ *
+ * @param date - A UTC instant.
+ * @returns A time such as `8:45 AM`.
+ *
+ * @example
+ * formatManilaTime(new Date("2026-10-23T00:45:00Z")); // "8:45 AM"
+ */
+export function formatManilaTime(date: Date): string {
+  return timeFormatter.format(date);
 }
