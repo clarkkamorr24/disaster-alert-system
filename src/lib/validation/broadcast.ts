@@ -18,3 +18,13 @@ export const broadcastInputSchema = z.object({
 
 /** A parsed send from the compose form. */
 export type BroadcastInput = z.infer<typeof broadcastInputSchema>;
+
+/** A resend from the compose form: a UUID idempotency key, the message as typed, and the original broadcast's id. */
+export const resendInputSchema = z.object({
+  idempotencyKey: broadcastInputSchema.shape.idempotencyKey,
+  content: z.string(),
+  retryOfId: z.string().min(1, "Reload the page and try again."),
+});
+
+/** A parsed resend from the compose form. */
+export type ResendInput = z.infer<typeof resendInputSchema>;

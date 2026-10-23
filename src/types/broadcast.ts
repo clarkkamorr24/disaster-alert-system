@@ -42,7 +42,30 @@ export interface BroadcastStore {
     input: SendBroadcastInput & { senderId: string; creditsPerRecipient: number },
   ): Promise<{ id: string; created: boolean }>;
   addBlastId(broadcastId: string, blastId: string): Promise<void>;
+  /** Applies each update unless it would move the recipient's status backwards. */
   updateRecipients(broadcastId: string, updates: RecipientUpdate[]): Promise<void>;
+}
+
+/** Where delivery reports read and write recipient statuses. */
+export type DeliveryStore = Pick<BroadcastStore, "updateRecipients"> & {
+  /** `null` when the broadcast has no recipient with this phone. */
+  getRecipientStatus(broadcastId: string, phone: string): Promise<RecipientStatus | null>;
+};
+
+/** A broadcast's overall status, derived from its recipients' statuses. */
+export type BroadcastStatus = "SENDING" | "COMPLETED" | "PARTIAL" | "FAILED";
+
+/** One recipient as the delivery report shows it. */
+export interface ReportRecipient {
+  id: string;
+  /** Snapshot at send time. */
+  name: string;
+  /** Snapshot at send time, canonical `+639…`. */
+  phone: string;
+  status: RecipientStatus;
+  failReason: string | null;
+  /** The member's current zone, or `null` when the member was deleted. */
+  zoneName: string | null;
 }
 
 /** A zone the compose form can send to. */
@@ -73,11 +96,20 @@ export interface ComposeAlert {
   zoneNames: string[];
 }
 
-/** What the compose form sends to {@link sendBroadcastAction}. */
-export interface SendBroadcastActionInput {
+/** The unreached members a resend goes to, as the compose form needs them. */
+export interface ComposeResend {
+  retryOfId: string;
+  memberCount: number;
+  /** The zones those members live in, sorted. */
+  zoneNames: string[];
+}
+
+/**
+ * What the compose form sends to {@link sendBroadcastAction}: zones to send
+ * to, or, for a resend, the broadcast whose unreached members get it.
+ */
+export type SendBroadcastActionInput = {
   idempotencyKey: string;
   /** The message as typed, without the prefix. */
   content: string;
-  alertId: string | null;
-  zoneIds: string[];
-}
+} & ({ alertId: string | null; zoneIds: string[] } | { retryOfId: string });

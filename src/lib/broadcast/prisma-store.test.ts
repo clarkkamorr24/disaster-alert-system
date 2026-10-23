@@ -6,7 +6,7 @@ import { createPrismaBroadcastStore } from "@/lib/broadcast/prisma-store";
 const { prisma } = vi.hoisted(() => ({
   prisma: {
     broadcast: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
-    broadcastRecipient: { updateMany: vi.fn((args: unknown) => args) },
+    broadcastRecipient: { updateMany: vi.fn((args: unknown) => args), findUnique: vi.fn() },
     $transaction: vi.fn(async (operations: unknown[]) => operations),
   },
 }));
@@ -86,13 +86,13 @@ describe("createPrismaBroadcastStore", () => {
       expect(prisma.broadcastRecipient.updateMany.mock.calls).toEqual([
         [
           {
-            where: { broadcastId: "b1", phone: { in: ["+639171234567", "+639181234567"] } },
+            where: { broadcastId: "b1", phone: { in: ["+639171234567", "+639181234567"] }, status: { in: ["PENDING", "RETRYING"] } },
             data: { status: "FAILED", failReason: "timeout", providerRef: undefined },
           },
         ],
         [
           {
-            where: { broadcastId: "b1", phone: { in: ["+639191234567"] } },
+            where: { broadcastId: "b1", phone: { in: ["+639191234567"] }, status: { in: ["PENDING", "RETRYING"] } },
             data: { status: "SKIPPED", failReason: "unreachable", providerRef: undefined },
           },
         ],
@@ -102,21 +102,21 @@ describe("createPrismaBroadcastStore", () => {
 
     it("keeps updates that leave the fail reason apart from updates that clear it", async () => {
       await createPrismaBroadcastStore().updateRecipients("b1", [
-        { phone: "09171234567", status: "PENDING" },
-        { phone: "09181234567", status: "PENDING", failReason: null },
+        { phone: "09171234567", status: "RETRYING" },
+        { phone: "09181234567", status: "RETRYING", failReason: null },
       ]);
 
       expect(prisma.broadcastRecipient.updateMany.mock.calls).toEqual([
         [
           {
-            where: { broadcastId: "b1", phone: { in: ["+639171234567"] } },
-            data: { status: "PENDING", failReason: undefined, providerRef: undefined },
+            where: { broadcastId: "b1", phone: { in: ["+639171234567"] }, status: { in: ["PENDING", "RETRYING"] } },
+            data: { status: "RETRYING", failReason: undefined, providerRef: undefined },
           },
         ],
         [
           {
-            where: { broadcastId: "b1", phone: { in: ["+639181234567"] } },
-            data: { status: "PENDING", failReason: null, providerRef: undefined },
+            where: { broadcastId: "b1", phone: { in: ["+639181234567"] }, status: { in: ["PENDING", "RETRYING"] } },
+            data: { status: "RETRYING", failReason: null, providerRef: undefined },
           },
         ],
       ]);
@@ -134,6 +134,23 @@ describe("createPrismaBroadcastStore", () => {
     it("does nothing for an empty list", async () => {
       await createPrismaBroadcastStore().updateRecipients("b1", []);
       expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getRecipientStatus", () => {
+    it("looks the recipient up by broadcast and canonical phone", async () => {
+      prisma.broadcastRecipient.findUnique.mockResolvedValue({ status: "RETRYING" });
+
+      await expect(createPrismaBroadcastStore().getRecipientStatus("b1", "09171234567")).resolves.toBe("RETRYING");
+      expect(prisma.broadcastRecipient.findUnique).toHaveBeenCalledWith({
+        where: { broadcastId_phone: { broadcastId: "b1", phone: "+639171234567" } },
+        select: { status: true },
+      });
+    });
+
+    it("returns null for an unknown recipient", async () => {
+      prisma.broadcastRecipient.findUnique.mockResolvedValue(null);
+      await expect(createPrismaBroadcastStore().getRecipientStatus("b1", "+639171234567")).resolves.toBeNull();
     });
   });
 

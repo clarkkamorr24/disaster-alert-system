@@ -1,9 +1,10 @@
 import "server-only";
 
+import { statusesThatCanBecome } from "@/lib/broadcast/delivery";
 import { prisma } from "@/lib/db";
 import { toCanonicalPhone } from "@/lib/domain/phone";
 import { isUniqueViolation } from "@/lib/prisma-errors";
-import type { BroadcastStore, RecipientUpdate } from "@/types/broadcast";
+import type { BroadcastStore, DeliveryStore, RecipientUpdate } from "@/types/broadcast";
 
 /**
  * Groups updates that change only the status and fail reason, so a whole
@@ -35,11 +36,13 @@ function groupUpdates(updates: RecipientUpdate[]): { phones: string[]; update: R
  * Creates the {@link BroadcastStore} backed by the database.
  *
  * Recipients are matched on their canonical `+639…` phone, so numbers the
- * provider reports as `09…` still find their row.
+ * provider reports as `09…` still find their row. An update only applies to
+ * recipients whose stored status may move to the new one, so two delivery
+ * reports that race can't move a status backwards.
  *
- * @returns The Prisma-backed store.
+ * @returns The Prisma-backed store, which is also a {@link DeliveryStore}.
  */
-export function createPrismaBroadcastStore(): BroadcastStore {
+export function createPrismaBroadcastStore(): BroadcastStore & DeliveryStore {
   async function findIdByIdempotencyKey(key: string): Promise<string | null> {
     const broadcast = await prisma.broadcast.findUnique({
       where: { idempotencyKey: key },
@@ -96,11 +99,19 @@ export function createPrismaBroadcastStore(): BroadcastStore {
       await prisma.$transaction(
         groupUpdates(updates).map(({ phones, update }) =>
           prisma.broadcastRecipient.updateMany({
-            where: { broadcastId, phone: { in: phones } },
+            where: { broadcastId, phone: { in: phones }, status: { in: statusesThatCanBecome(update.status) } },
             data: { status: update.status, failReason: update.failReason, providerRef: update.providerRef },
           }),
         ),
       );
+    },
+
+    async getRecipientStatus(broadcastId, phone) {
+      const recipient = await prisma.broadcastRecipient.findUnique({
+        where: { broadcastId_phone: { broadcastId, phone: toCanonicalPhone(phone) } },
+        select: { status: true },
+      });
+      return recipient?.status ?? null;
     },
   };
 }
