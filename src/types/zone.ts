@@ -1,4 +1,5 @@
 import type { Severity } from "@/generated/prisma/enums";
+import type { RainfallLevel } from "@/types/weather";
 
 /** A saved zone, as the edit form needs it. */
 export interface ZoneFormValues {
@@ -16,4 +17,18 @@ export interface ZoneStatus {
   worstSeverity: Severity | null;
   /** In the order the alerts were given. */
   activeAlertIds: string[];
+}
+
+/** A zone as the dashboard map draws it. */
+export interface ZoneMapPoint {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  /** `null` when no active alert affects the zone. */
+  worstSeverity: Severity | null;
+  activeAlertTitles: string[];
+  memberCount: number;
+  /** `null` when the weather is unavailable. */
+  rainfallLevel: RainfallLevel | null;
 }

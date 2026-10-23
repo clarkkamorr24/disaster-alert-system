@@ -128,3 +128,16 @@
     @apply font-sans;
   }
 }
+/*
+ * Leaflet map overrides. leaflet.css is unlayered, which beats anything in @layer, so these
+ * stay unlayered too; the extra ancestor outranks Leaflet's own selectors whatever the load order.
+ */
+body .leaflet-container {
+  font-family: inherit;
+}
+
+.leaflet-container .leaflet-popup-content-wrapper,
+.leaflet-container .leaflet-popup-tip {
+  background: var(--popover);
+  color: var(--popover-foreground);
+}

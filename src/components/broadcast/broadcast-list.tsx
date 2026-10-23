@@ -14,9 +14,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { HazardType, RecipientStatus } from "@/generated/prisma/enums";
+import type { HazardType } from "@/generated/prisma/enums";
 import { requireOfficer } from "@/lib/auth/dal";
-import { deriveBroadcastStatus, emptyStatusCounts } from "@/lib/broadcast/status";
+import { loadBroadcastSummaries } from "@/lib/broadcast/summaries";
 import { formatManilaDateTime } from "@/lib/datetime";
 import { prisma } from "@/lib/db";
 
@@ -73,7 +73,7 @@ function Pagination({ page, pageCount }: { page: number; pageCount: number }) {
 }
 
 /** What the broadcast was about: the alert's hazard and title, or "Announcement". */
-function About({ alert }: { alert: { title: string; hazardType: HazardType } | null }) {
+export function BroadcastAbout({ alert }: { alert: { title: string; hazardType: HazardType } | null }) {
   if (!alert) return <span className="text-muted-foreground">Announcement</span>;
   return (
     <span className="flex flex-col items-start gap-1">
@@ -92,42 +92,6 @@ function ResendBadge() {
   );
 }
 
-/** Loads one page of broadcasts, newest first, each with its recipient count and derived status. */
-async function loadPage(page: number) {
-  const broadcasts = await prisma.broadcast.findMany({
-    orderBy: { createdAt: "desc" },
-    skip: (page - 1) * BROADCASTS_PER_PAGE,
-    take: BROADCASTS_PER_PAGE,
-    select: {
-      id: true,
-      createdAt: true,
-      retryOfId: true,
-      alert: { select: { title: true, hazardType: true } },
-    },
-  });
-  const groups = await prisma.broadcastRecipient.groupBy({
-    by: ["broadcastId", "status"],
-    where: { broadcastId: { in: broadcasts.map((broadcast) => broadcast.id) } },
-    _count: { _all: true },
-  });
-
-  const countsById = new Map<string, Record<RecipientStatus, number>>();
-  for (const group of groups) {
-    const counts = countsById.get(group.broadcastId) ?? emptyStatusCounts();
-    counts[group.status] = group._count._all;
-    countsById.set(group.broadcastId, counts);
-  }
-
-  return broadcasts.map((broadcast) => {
-    const counts = countsById.get(broadcast.id) ?? emptyStatusCounts();
-    return {
-      ...broadcast,
-      recipientCount: Object.values(counts).reduce((sum, count) => sum + count, 0),
-      status: deriveBroadcastStatus(counts),
-    };
-  });
-}
-
 /** Broadcast history, 25 per page, newest first: a table from `md` up, cards below. Render inside `<Suspense>`. */
 export async function BroadcastList({ searchParams }: BroadcastListProps) {
   const { page: pageParam } = await searchParams;
@@ -136,7 +100,7 @@ export async function BroadcastList({ searchParams }: BroadcastListProps) {
   const total = await prisma.broadcast.count();
   const pageCount = Math.max(1, Math.ceil(total / BROADCASTS_PER_PAGE));
   const page = Math.min(parsePage(pageParam), pageCount);
-  const broadcasts = await loadPage(page);
+  const broadcasts = await loadBroadcastSummaries((page - 1) * BROADCASTS_PER_PAGE, BROADCASTS_PER_PAGE);
 
   if (broadcasts.length === 0) {
     return (
@@ -173,7 +137,7 @@ export async function BroadcastList({ searchParams }: BroadcastListProps) {
                   </div>
                 </TableCell>
                 <TableCell className="max-w-72 px-4 py-3 whitespace-normal">
-                  <About alert={broadcast.alert} />
+                  <BroadcastAbout alert={broadcast.alert} />
                 </TableCell>
                 <TableCell className="px-4 py-3 tabular-nums">{recipients(broadcast.recipientCount)}</TableCell>
                 <TableCell className="px-4 py-3">
@@ -197,7 +161,7 @@ export async function BroadcastList({ searchParams }: BroadcastListProps) {
                   <span className="font-medium">{formatManilaDateTime(broadcast.createdAt)}</span>
                   {broadcast.retryOfId && <ResendBadge />}
                 </div>
-                <About alert={broadcast.alert} />
+                <BroadcastAbout alert={broadcast.alert} />
                 <div className="flex flex-wrap items-center gap-2">
                   <BroadcastStatusBadge status={broadcast.status} />
                   <span className="text-sm text-muted-foreground">{recipients(broadcast.recipientCount)}</span>
