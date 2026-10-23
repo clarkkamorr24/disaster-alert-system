@@ -7,6 +7,9 @@ export const NO_BROADCAST_ZONES_MESSAGE = "Select at least one zone.";
 /** Shown when the selected zones have no active members. */
 export const NO_MEMBERS_MESSAGE = "No active members in the selected zones.";
 
+/** Shown when a resend has nobody left to go to. */
+export const NO_UNREACHED_MESSAGE = "Nobody to resend to: the members who weren't reached are no longer active.";
+
 /** Shown when the estimated cost exceeds the known credit balance. */
 export const NOT_ENOUGH_CREDITS_MESSAGE = "Not enough SMS credits. Top up UniSMS first.";
 

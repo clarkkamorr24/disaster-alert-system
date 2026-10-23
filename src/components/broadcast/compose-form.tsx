@@ -22,6 +22,7 @@ import {
   findUnfilledPlaceholders,
   NO_BROADCAST_ZONES_MESSAGE,
   NO_MEMBERS_MESSAGE,
+  NO_UNREACHED_MESSAGE,
   NOT_ENOUGH_CREDITS_MESSAGE,
   renderComposeMessage,
   unfilledPlaceholderMessage,
@@ -29,9 +30,20 @@ import {
 import { estimateCredits, sanitizeSmsText, validateSmsContent, withPrefix } from "@/lib/domain/sms-text";
 import { isRedirectError } from "@/lib/redirect-error";
 import type { ActionResult } from "@/types/action-result";
-import type { ComposeAlert, ComposeTemplate, ComposeZone, SendBroadcastActionInput } from "@/types/broadcast";
+import type {
+  ComposeAlert,
+  ComposeResend,
+  ComposeTemplate,
+  ComposeZone,
+  SendBroadcastActionInput,
+} from "@/types/broadcast";
 
 interface ComposeFormProps {
+  /**
+   * One per compose form, so a double click or a retry creates one broadcast.
+   * Made on the server for each visit; use it as the form's `key` too.
+   */
+  idempotencyKey: string;
   /** The SMS prefix every message starts with, such as `Mi-isi FA:`. */
   prefix: string;
   /** Whether links are blocked (the default sender ID can't send them). */
@@ -42,6 +54,8 @@ interface ComposeFormProps {
   templates: ComposeTemplate[];
   /** The alert the broadcast is about, or `null` for a general announcement. */
   alert: ComposeAlert | null;
+  /** For a resend, the unreached members it goes to; the zone pickers are hidden. */
+  resend: ComposeResend | null;
   initialTemplateId: string | null;
   initialMessage: string;
 }
@@ -60,20 +74,20 @@ function messageErrors(body: string, text: string, blockLinks: boolean): string[
 }
 
 export function ComposeForm({
+  idempotencyKey,
   prefix,
   blockLinks,
   balance,
   zones,
   templates,
   alert,
+  resend,
   initialTemplateId,
   initialMessage,
 }: ComposeFormProps) {
-  // One key per compose form, so a double click or a retry creates one broadcast.
-  const [idempotencyKey] = useState(() => crypto.randomUUID());
   const [templateId, setTemplateId] = useState(initialTemplateId);
   const [message, setMessage] = useState(initialMessage);
-  const [zoneIds, setZoneIds] = useState(alert?.zoneIds ?? []);
+  const [zoneIds, setZoneIds] = useState(resend ? [] : (alert?.zoneIds ?? []));
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function submit(_prev: SendResult | null, input: SendBroadcastActionInput): Promise<SendResult> {
@@ -99,7 +113,9 @@ export function ComposeForm({
   const errors = messageErrors(body, text, blockLinks);
   const creditsPerMember = estimateCredits(text);
   const selectedZones = zones.filter((zone) => zoneIds.includes(zone.id));
-  const memberCount = selectedZones.reduce((sum, zone) => sum + zone.activeMemberCount, 0);
+  const memberCount = resend
+    ? resend.memberCount
+    : selectedZones.reduce((sum, zone) => sum + zone.activeMemberCount, 0);
   const totalCredits = creditsPerMember * memberCount;
   const overBalance = balance !== null && totalCredits > balance;
   const canSend = body !== "" && errors.length === 0 && memberCount > 0 && !overBalance && !pending;
@@ -117,7 +133,8 @@ export function ComposeForm({
   }
 
   function handleConfirm() {
-    startTransition(() => formAction({ idempotencyKey, content: message, alertId: alert?.id ?? null, zoneIds }));
+    const target = resend ? { retryOfId: resend.retryOfId } : { alertId: alert?.id ?? null, zoneIds };
+    startTransition(() => formAction({ idempotencyKey, content: message, ...target }));
   }
 
   return (
@@ -165,31 +182,46 @@ export function ComposeForm({
         <p className="text-sm text-muted-foreground">&ldquo;{prefix}&rdquo; is added to the start of every message.</p>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <span id="compose-zones-label" className="text-sm leading-none font-medium">
-          Send to
-        </span>
-        <ZonePicker
-          zones={zones}
-          selected={zoneIds}
-          onChange={setZoneIds}
-          labelId="compose-zones-label"
-          errorId={recipientProblem ? "compose-zones-error" : undefined}
-          hints={Object.fromEntries(
-            zones.map((zone) => [
-              zone.id,
-              `${zone.activeMemberCount} ${zone.activeMemberCount === 1 ? "member" : "members"}`,
-            ]),
+      {resend ? (
+        <div className="flex flex-col gap-2">
+          <span className="text-sm leading-none font-medium">Send to</span>
+          {resend.memberCount > 0 ? (
+            <p>
+              {resend.memberCount} {resend.memberCount === 1 ? "member" : "members"} who{" "}
+              {resend.memberCount === 1 ? "was" : "were"} not reached, in {resend.zoneNames.join(", ")}.
+            </p>
+          ) : (
+            <p className="text-sm text-destructive">{NO_UNREACHED_MESSAGE}</p>
           )}
-        />
-        {recipientProblem ? (
-          <p id="compose-zones-error" className="text-sm text-destructive">
-            {recipientProblem}
-          </p>
-        ) : (
-          <p className="text-sm text-muted-foreground">{recipientHint}</p>
-        )}
-      </div>
+          <p className="text-sm text-muted-foreground">Members who were deactivated since are left out.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <span id="compose-zones-label" className="text-sm leading-none font-medium">
+            Send to
+          </span>
+          <ZonePicker
+            zones={zones}
+            selected={zoneIds}
+            onChange={setZoneIds}
+            labelId="compose-zones-label"
+            errorId={recipientProblem ? "compose-zones-error" : undefined}
+            hints={Object.fromEntries(
+              zones.map((zone) => [
+                zone.id,
+                `${zone.activeMemberCount} ${zone.activeMemberCount === 1 ? "member" : "members"}`,
+              ]),
+            )}
+          />
+          {recipientProblem ? (
+            <p id="compose-zones-error" className="text-sm text-destructive">
+              {recipientProblem}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">{recipientHint}</p>
+          )}
+        </div>
+      )}
 
       <ComposePreview text={text} creditsPerMember={creditsPerMember} memberCount={memberCount} balance={balance} />
 
@@ -218,7 +250,7 @@ export function ComposeForm({
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         memberCount={memberCount}
-        zoneNames={selectedZones.map((zone) => zone.name)}
+        zoneNames={resend ? resend.zoneNames : selectedZones.map((zone) => zone.name)}
         totalCredits={totalCredits}
         pending={pending}
         onConfirm={handleConfirm}
