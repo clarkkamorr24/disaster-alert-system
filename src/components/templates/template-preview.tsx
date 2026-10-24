@@ -1,8 +1,8 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
+import { SmsPreview } from "@/components/alerts/sms-preview";
 import { useCurrentMinute } from "@/hooks/use-current-minute";
-import { withPrefix } from "@/lib/domain/sms-text";
+import { estimateCredits, withPrefix } from "@/lib/domain/sms-text";
 import { renderTemplate } from "@/lib/templates/render";
 
 const SAMPLE = {
@@ -16,32 +16,34 @@ interface TemplatePreviewProps {
   prefix: string;
 }
 
-/** The template filled with sample values, shown as a text message bubble. */
+/** The sticky card next to the template form: the template filled with sample values, and its length. */
 export function TemplatePreview({ body, prefix }: TemplatePreviewProps) {
   // Null until hydrated, so the server never renders a clock reading.
   const now = useCurrentMinute();
   const trimmed = body.trim();
+  const text =
+    trimmed === "" ? "" : now === null ? null : withPrefix(renderTemplate(trimmed, { ...SAMPLE, date: new Date(now) }), prefix);
+  const credits = estimateCredits(text ?? "");
 
   return (
-    <section aria-labelledby="template-preview-heading" className="flex flex-col gap-2">
-      <h2 id="template-preview-heading" className="text-sm leading-none font-medium">
-        Preview
-      </h2>
-      <div className="flex flex-col gap-3 rounded-xl border bg-muted/40 p-4">
-        <p className="text-sm text-muted-foreground">
-          Sample values: {SAMPLE.hazard}, {SAMPLE.level}, {SAMPLE.zones.join(" and ")}, the
-          current time.
+    <section
+      aria-labelledby="template-preview-heading"
+      className="sticky top-[84px] flex min-w-0 flex-[2_1_300px] flex-col gap-4 rounded-xl border bg-card p-[22px]"
+    >
+      <div className="flex flex-col gap-1">
+        <h2 id="template-preview-heading" className="font-heading text-base font-bold tracking-[-0.03em]">
+          Preview
+        </h2>
+        <p className="text-[13px] text-muted-foreground">
+          Sample values: {SAMPLE.hazard}, {SAMPLE.level}, {SAMPLE.zones.join(" and ")}, the current time.
         </p>
-        <div className="max-w-sm self-start rounded-2xl rounded-bl-sm bg-card px-4 py-3 text-base whitespace-pre-wrap break-words shadow-sm ring-1 ring-border">
-          {trimmed === "" ? (
-            <span className="text-muted-foreground">Type a message to see the preview.</span>
-          ) : now === null ? (
-            <Skeleton className="h-5 w-56" />
-          ) : (
-            withPrefix(renderTemplate(trimmed, { ...SAMPLE, date: new Date(now) }), prefix)
-          )}
-        </div>
       </div>
+      <SmsPreview text={text} prefix={prefix} />
+      {text && (
+        <p className="text-[13px] text-muted-foreground tabular-nums">
+          {text.length} characters · {credits} {credits === 1 ? "credit" : "credits"} per member
+        </p>
+      )}
     </section>
   );
 }

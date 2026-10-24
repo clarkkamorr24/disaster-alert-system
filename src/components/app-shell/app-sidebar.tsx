@@ -11,7 +11,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -20,7 +19,6 @@ import {
 } from "@/components/ui/sidebar";
 
 interface AppSidebarProps {
-  /** Extra content after a nav item's label, keyed by its `href` (the Alerts count). */
   badges?: Partial<Record<string, ReactNode>>;
   footer?: ReactNode;
 }
@@ -32,7 +30,6 @@ interface NavMenuProps {
   onNavigate: () => void;
 }
 
-/** Mockup nav item: 45px, 20px icon, white on a 12% tint with a green bar when active. */
 const NAV_BUTTON_CLASS =
   "h-[45px] gap-3 rounded-[9px] px-[13px] text-sm font-medium text-sidebar-foreground hover:bg-white/[.07] hover:text-white active:bg-white/[.07] active:text-white data-active:bg-sidebar-accent data-active:font-medium data-active:text-white data-active:shadow-[inset_3px_0_0_var(--sidebar-indicator)] [&_svg]:size-5";
 
@@ -66,8 +63,6 @@ function NavMenu({ items, pathname, badges, onNavigate }: NavMenuProps) {
   );
 }
 
-// usePathname suspends on routes with unknown dynamic params under cacheComponents,
-// so it lives in its own Suspense boundary with an unhighlighted fallback.
 function ActiveNavMenu(props: Omit<NavMenuProps, "pathname">) {
   return <NavMenu {...props} pathname={usePathname()} />;
 }
@@ -98,7 +93,7 @@ export function AppSidebar({ badges, footer }: AppSidebarProps) {
           <AppLogo variant="sidebar" />
           <span className="flex flex-col">
             <span className="font-heading text-[17px] font-bold tracking-[-0.02em] text-white">
-              Mi-isi
+              MI-ISI
             </span>
             <span className="mt-px text-[11px] font-medium text-[#a9c4b2]">
               Disaster Alert System
@@ -108,9 +103,6 @@ export function AppSidebar({ badges, footer }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup className="px-3.5 pt-[25px]">
-          <SidebarGroupLabel className="h-auto px-[13px] pb-2.5 text-[10px] font-bold tracking-[.12em] text-sidebar-muted uppercase">
-            Workspace
-          </SidebarGroupLabel>
           <NavSection items={NAV_ITEMS} badges={badges} onNavigate={closeMobile} />
         </SidebarGroup>
       </SidebarContent>

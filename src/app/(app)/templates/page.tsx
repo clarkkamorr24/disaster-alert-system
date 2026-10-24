@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function TemplatesPage() {
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="w-full pb-8">
       <PageHeader
         eyebrow="Association records"
         title="Message templates"

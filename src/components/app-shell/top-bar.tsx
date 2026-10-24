@@ -18,7 +18,7 @@ export function TopBar() {
         <HeaderMenuButton />
         <span className="flex min-w-0 items-center gap-2 font-heading font-bold text-[#183323] dark:text-foreground">
           <AppLogo variant="brand" size="sm" />
-          Mi-isi
+          MI-ISI
         </span>
       </div>
       <div className="ml-auto flex items-center gap-2.5">

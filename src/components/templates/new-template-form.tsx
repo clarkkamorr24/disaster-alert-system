@@ -1,5 +1,4 @@
 import { TemplateForm } from "@/components/templates/template-form";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOfficer } from "@/lib/auth/dal";
 import { getEnv } from "@/lib/env";
@@ -8,16 +7,15 @@ import { getEnv } from "@/lib/env";
 export async function NewTemplateForm() {
   await requireOfficer();
 
-  return (
-    <Card>
-      <CardContent>
-        <TemplateForm prefix={getEnv().SMS_MESSAGE_PREFIX} />
-      </CardContent>
-    </Card>
-  );
+  return <TemplateForm prefix={getEnv().SMS_MESSAGE_PREFIX} />;
 }
 
-/** Placeholder while {@link NewTemplateForm} loads. */
+/** Placeholder while {@link NewTemplateForm} loads: the form card and the preview card. */
 export function NewTemplateFormSkeleton() {
-  return <Skeleton className="h-160 rounded-xl" />;
+  return (
+    <div className="flex flex-wrap items-start gap-4">
+      <Skeleton className="h-[560px] flex-[3_1_440px] rounded-xl" />
+      <Skeleton className="h-60 flex-[2_1_300px] rounded-xl" />
+    </div>
+  );
 }

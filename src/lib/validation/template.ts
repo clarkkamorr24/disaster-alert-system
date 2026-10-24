@@ -4,6 +4,9 @@ import { HazardType } from "@/generated/prisma/enums";
 import { SMS_MAX_CHARS, withPrefix } from "@/lib/domain/sms-text";
 import { findUnknownPlaceholders, TEMPLATE_PLACEHOLDERS } from "@/lib/templates/render";
 
+/** The longest template name allowed, in characters. */
+export const TEMPLATE_NAME_MAX_LENGTH = 60;
+
 const PLACEHOLDER_LIST = `${TEMPLATE_PLACEHOLDERS.slice(0, -1)
   .map((name) => `{${name}}`)
   .join(", ")} or {${TEMPLATE_PLACEHOLDERS.at(-1)}}`;
@@ -34,7 +37,7 @@ export function makeTemplateSchema(prefix: string) {
       .string()
       .trim()
       .min(2, "Enter at least 2 characters.")
-      .max(60, "Use 60 characters or fewer."),
+      .max(TEMPLATE_NAME_MAX_LENGTH, `Use ${TEMPLATE_NAME_MAX_LENGTH} characters or fewer.`),
     hazardType: z.enum(HazardType, { error: "Choose a hazard type." }).optional(),
     body: z
       .string()

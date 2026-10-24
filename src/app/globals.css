@@ -43,6 +43,10 @@
   --color-control-foreground: var(--control-foreground);
   --color-avatar: var(--avatar);
   --color-avatar-foreground: var(--avatar-foreground);
+  --color-accent-border-soft: var(--accent-border-soft);
+  --color-any-hazard-tile: var(--any-hazard-tile);
+  --color-any-hazard-tile-foreground: var(--any-hazard-tile-foreground);
+  --color-dashed-border: var(--dashed-border);
   --color-scrim: var(--scrim);
   --color-conditions: var(--conditions);
   --color-conditions-foreground: var(--conditions-foreground);
@@ -122,6 +126,11 @@
   --control-foreground: #4d5e53;
   --avatar: #e7f3ea;
   --avatar-foreground: #24633e;
+  /* The templates page: placeholder banner border, the "Any hazard" icon tile, dashed "create" cards. */
+  --accent-border-soft: #d4e7d9;
+  --any-hazard-tile: #edf7f0;
+  --any-hazard-tile-foreground: #32704a;
+  --dashed-border: #bccbc0;
   /* Dialog and drawer backdrops; use with an opacity, e.g. bg-scrim/55. */
   --scrim: #0b1d12;
   /* The zones page's Current conditions card; dark green in both themes. */
@@ -212,6 +221,10 @@
   --control-foreground: #f0f4f1;
   --avatar: #16271c;
   --avatar-foreground: #dcfce7;
+  --accent-border-soft: #24452f;
+  --any-hazard-tile: #16271c;
+  --any-hazard-tile-foreground: #7fd1a0;
+  --dashed-border: #3b4b41;
   --conditions-shadow: 0 0 #0000;
   --destructive: oklch(0.704 0.191 22.216);
   --border: #26302a;

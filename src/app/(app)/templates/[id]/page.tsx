@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { BackToTemplates } from "@/components/templates/back-to-templates";
+import { BackLink } from "@/components/layout/back-link";
 import { TemplateDetail, TemplateDetailSkeleton } from "@/components/templates/template-detail";
 
 export const metadata: Metadata = {
@@ -10,8 +10,10 @@ export const metadata: Metadata = {
 
 export default function TemplatePage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <BackToTemplates />
+    <div className="flex w-full flex-col pb-8">
+      <div className="pt-[22px]">
+        <BackLink href="/templates" label="Message templates" />
+      </div>
       <Suspense fallback={<TemplateDetailSkeleton />}>
         <TemplateDetail params={params} />
       </Suspense>
