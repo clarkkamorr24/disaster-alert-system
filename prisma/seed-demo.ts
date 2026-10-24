@@ -8,11 +8,11 @@ if (process.env.SMS_DRIVER !== "fake") {
 
 const prisma = createSeedClient();
 
-// Placeholder coordinates for the demo, not the real purok centers.
+// Placeholder coordinates inside Barangay Mi-isi for the demo, not the real purok centers.
 const DEMO_ZONES = [
-  { name: "Purok 1", latitude: 13.17, longitude: 123.66 },
-  { name: "Purok 2", latitude: 13.176, longitude: 123.671 },
-  { name: "Purok 3", latitude: 13.182, longitude: 123.654 },
+  { name: "Purok 1", latitude: 13.188, longitude: 123.685 },
+  { name: "Purok 2", latitude: 13.2, longitude: 123.692 },
+  { name: "Purok 3", latitude: 13.215, longitude: 123.695 },
 ];
 
 // The last number ends in 0000, which the fake SMS driver marks Skipped.
@@ -38,7 +38,9 @@ function toCanonicalPhone(phone: string): string {
 async function main(): Promise<void> {
   const zoneIds = new Map<string, string>();
   for (const zone of DEMO_ZONES) {
-    const saved = await prisma.farmZone.upsert({ where: { name: zone.name }, update: {}, create: zone });
+    // Coordinates are updated too, so a rerun moves demo zones placed outside Mi-isi before.
+    const { latitude, longitude } = zone;
+    const saved = await prisma.farmZone.upsert({ where: { name: zone.name }, update: { latitude, longitude }, create: zone });
     zoneIds.set(zone.name, saved.id);
   }
   console.log(`Zones: ${DEMO_ZONES.length} upserted`);

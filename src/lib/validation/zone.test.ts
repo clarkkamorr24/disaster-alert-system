@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { isInMiIsi, OUTSIDE_MI_ISI_MESSAGE } from "@/lib/map";
+
 import { isInPhilippines, OUTSIDE_PHILIPPINES_MESSAGE, zoneInputSchema } from "./zone";
 
 describe("zoneInputSchema", () => {
@@ -64,5 +66,22 @@ describe("isInPhilippines", () => {
   it("matches the schema message", () => {
     const parsed = zoneInputSchema.safeParse({ name: "P1", latitude: 35.7, longitude: 139.7 });
     expect(parsed.error!.issues[0].message).toBe(OUTSIDE_PHILIPPINES_MESSAGE);
+  });
+});
+
+describe("Barangay Mi-isi check", () => {
+  it("rejects a point in the Philippines but outside Mi-isi, on latitude", () => {
+    // Lidong, just east of the boundary.
+    const parsed = zoneInputSchema.safeParse({ name: "P1", latitude: 13.2, longitude: 123.72 });
+    expect(parsed.error!.issues).toEqual([
+      expect.objectContaining({ path: ["latitude"], message: OUTSIDE_MI_ISI_MESSAGE }),
+    ]);
+  });
+
+  it("finds points in both parts of the boundary and outside it", () => {
+    expect(isInMiIsi(13.1953, 123.6886)).toBe(true);
+    expect(isInMiIsi(13.182, 123.68)).toBe(true);
+    expect(isInMiIsi(13.17, 123.66)).toBe(false);
+    expect(isInMiIsi(13.26, 123.69)).toBe(false);
   });
 });

@@ -3,16 +3,19 @@
 import "leaflet/dist/leaflet.css";
 
 import L from "leaflet";
-import { useEffect } from "react";
-import { AttributionControl, MapContainer, Marker, Popup, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { MapPin } from "lucide-react";
+import { useRef, useState } from "react";
+import { AttributionControl, MapContainer, Marker, Popup, TileLayer, Tooltip } from "react-leaflet";
 import { cn } from "cn";
 
 import { SeverityBadge } from "@/components/alerts/severity-badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RainfallBadge } from "@/components/weather/rainfall-badge";
+import { BarangayFocus } from "@/components/zones/barangay-focus";
 import type { Severity } from "@/generated/prisma/enums";
 import { useRemountKey } from "@/hooks/use-remount-key";
 import { severityTone, type SeverityTone } from "@/lib/domain/status-tone";
-import { FALLBACK_CENTER, FALLBACK_ZOOM, OSM_ATTRIBUTION, OSM_TILE_URL } from "@/lib/map";
+import { MI_ISI_BOUNDS, OSM_ATTRIBUTION, OSM_TILE_URL } from "@/lib/map";
 import type { ZoneMapPoint } from "@/types/zone";
 
 const LEGEND: { severity: Severity | null; label: string; always: boolean }[] = [
@@ -31,22 +34,26 @@ const LEGEND_DOT_CLASS: Record<SeverityTone, string> = {
   clear: "bg-marker-clear",
 };
 
-const pinIcons = new Map<SeverityTone, L.DivIcon>();
+const pinIcons = new Map<string, L.DivIcon>();
 
-/** The teardrop pin for a tone (styled in `globals.css`), created once per tone. */
-function pinIcon(tone: SeverityTone): L.DivIcon {
-  let icon = pinIcons.get(tone);
+/** The teardrop pin for a tone (styled in `globals.css`), larger and ringed when selected; created once each. */
+function pinIcon(tone: SeverityTone, selected: boolean): L.DivIcon {
+  const key = `${tone}:${selected}`;
+  let icon = pinIcons.get(key);
   if (!icon) {
+    // The rotated square's tip sits about 0.7 × its size below its center.
+    const size = selected ? 25 : 17;
+    const half = size / 2;
+    const tip = half + size * 0.707;
     icon = L.divIcon({
-      className: `zone-pin zone-pin--${tone}`,
-      iconSize: [17, 17],
-      // The rotated square's tip sits about 12px below its center.
-      iconAnchor: [8.5, 20.5],
-      popupAnchor: [0, -22],
+      className: cn("zone-pin", `zone-pin--${tone}`, selected && "zone-pin--selected"),
+      iconSize: [size, size],
+      iconAnchor: [half, tip],
+      popupAnchor: [0, -tip - 1],
       // Leaflet adds a 6px margin to right-hand tooltips.
-      tooltipAnchor: [9, -12],
+      tooltipAnchor: [half, -tip / 2 - 2],
     });
-    pinIcons.set(tone, icon);
+    pinIcons.set(key, icon);
   }
   return icon;
 }
@@ -55,21 +62,35 @@ interface ZoneMapProps {
   zones: ZoneMapPoint[];
 }
 
-/** Zooms the map to show every zone; leaves the fallback view when there are none. */
-function FitBounds({ zones }: ZoneMapProps) {
-  const map = useMap();
+interface ZonePickerProps extends ZoneMapProps {
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+}
 
-  useEffect(() => {
-    if (zones.length === 0) return;
-    map.fitBounds(
-      zones.map((zone) => [zone.latitude, zone.longitude]),
-      // maxZoom keeps a single zone from zooming in to street level. No animation: Leaflet 1.9
-      // crashes (`_leaflet_pos`) if the map is removed mid-zoom, e.g. by navigating right away.
-      { padding: [40, 40], maxZoom: 15, animate: false },
-    );
-  }, [map, zones]);
+/** The "Show zone" select over the map: a zone zooms to its pin, All zones shows the whole barangay. */
+function ZonePicker({ zones, selectedId, onSelect }: ZonePickerProps) {
+  const items = [{ value: null, label: "All zones" }, ...zones.map((zone) => ({ value: zone.id, label: zone.name }))];
 
-  return null;
+  return (
+    <div className="absolute top-3 right-[13px] z-[500]">
+      <Select items={items} value={selectedId} onValueChange={(value) => onSelect(value as string | null)}>
+        <SelectTrigger
+          aria-label="Show zone"
+          className="h-11 max-w-48 gap-[7px] rounded-lg border-input bg-card px-3 text-xs font-semibold text-control-foreground shadow-sm data-[size=default]:h-11 sm:h-[34px] sm:data-[size=default]:h-[34px]"
+        >
+          <MapPin className="size-[15px]" strokeWidth={1.75} aria-hidden="true" />
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {items.map((item) => (
+            <SelectItem key={item.value ?? "all"} value={item.value} className="min-h-11 sm:min-h-9">
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
 }
 
 function ZonePopup({ zone }: { zone: ZoneMapPoint }) {
@@ -120,42 +141,75 @@ function MapLegend({ zones }: ZoneMapProps) {
 }
 
 /**
- * Every zone as a pin colored by its worst active alert (gray when clear), with
- * its name and a legend, on muted OpenStreetMap tiles. Fills its parent, which
- * must be `relative`. Browser-only: load it through {@link ZoneMapClient}.
+ * Barangay Mi-isi with every zone as a pin colored by its worst active alert
+ * (gray when clear), its name, a legend, and a zone picker, on muted
+ * OpenStreetMap tiles. Choosing a zone or tapping its pin highlights the pin
+ * and opens its details. Fills its parent, which must be `relative`.
+ * Browser-only: load it through {@link ZoneMapClient}.
  */
 export default function ZoneMap({ zones }: ZoneMapProps) {
   const mapKey = useRemountKey();
+  const [map, setMap] = useState<L.Map | null>(null);
+  // Follows the open popup, so tapping a pin and closing its popup keep the picker in sync.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const markers = useRef(new Map<string, L.Marker>());
+
+  function select(id: string | null) {
+    if (!map) return;
+    const zone = zones.find((z) => z.id === id);
+    if (!zone) {
+      map.closePopup();
+      // No animation: Leaflet 1.9 crashes (`_leaflet_pos`) if the map is removed mid-zoom.
+      map.fitBounds(MI_ISI_BOUNDS, { animate: false });
+      return;
+    }
+    map.setView([zone.latitude, zone.longitude], Math.max(map.getZoom(), 16), { animate: false });
+    markers.current.get(zone.id)?.openPopup();
+  }
 
   return (
     <>
       <MapContainer
         key={mapKey}
-        center={FALLBACK_CENTER}
-        zoom={FALLBACK_ZOOM}
+        ref={setMap}
+        bounds={MI_ISI_BOUNDS}
+        maxBoundsViscosity={1}
         scrollWheelZoom={false}
         attributionControl={false}
         className="zone-map size-full"
       >
         <TileLayer url={OSM_TILE_URL} attribution={OSM_ATTRIBUTION} />
         <AttributionControl position="bottomleft" />
-        {zones.map((zone) => (
-          <Marker
-            key={zone.id}
-            position={[zone.latitude, zone.longitude]}
-            icon={pinIcon(severityTone(zone.worstSeverity))}
-            title={zone.name}
-          >
-            <Tooltip permanent direction="right" className="zone-pin-label">
-              {zone.name}
-            </Tooltip>
-            <Popup>
-              <ZonePopup zone={zone} />
-            </Popup>
-          </Marker>
-        ))}
-        <FitBounds zones={zones} />
+        <BarangayFocus />
+        {zones.map((zone) => {
+          const selected = zone.id === selectedId;
+          return (
+            <Marker
+              key={zone.id}
+              ref={(marker) => {
+                if (marker) markers.current.set(zone.id, marker);
+                else markers.current.delete(zone.id);
+              }}
+              position={[zone.latitude, zone.longitude]}
+              icon={pinIcon(severityTone(zone.worstSeverity), selected)}
+              zIndexOffset={selected ? 1000 : 0}
+              title={zone.name}
+              eventHandlers={{
+                popupopen: () => setSelectedId(zone.id),
+                popupclose: () => setSelectedId((current) => (current === zone.id ? null : current)),
+              }}
+            >
+              <Tooltip permanent direction="right" className="zone-pin-label">
+                {zone.name}
+              </Tooltip>
+              <Popup>
+                <ZonePopup zone={zone} />
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
+      {zones.length > 0 && <ZonePicker zones={zones} selectedId={selectedId} onSelect={select} />}
       <MapLegend zones={zones} />
     </>
   );

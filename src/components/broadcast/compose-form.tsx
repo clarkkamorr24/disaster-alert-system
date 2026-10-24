@@ -142,7 +142,7 @@ export function ComposeForm(props: ComposeFormProps) {
           value={message}
           onChange={setMessage}
           error={errors.length > 0 ? errors.join(" ") : undefined}
-          helper={`${text.length} characters · ${creditsPerMember} SMS ${creditsPerMember === 1 ? "credit" : "credits"} per member·`}
+          helper={`${text.length} characters · ${creditsPerMember} SMS ${creditsPerMember === 1 ? "credit" : "credits"} per member.`}
           rows={6}
         />
 

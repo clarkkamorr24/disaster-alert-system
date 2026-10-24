@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { isInMiIsi, OUTSIDE_MI_ISI_MESSAGE } from "@/lib/map";
+
 /** Latitude and longitude bounds that contain the whole Philippines. */
 export const PHILIPPINE_BOUNDS = { minLat: 4, maxLat: 22, minLng: 116, maxLng: 127 } as const;
 
@@ -40,7 +42,8 @@ function coordinate(label: string) {
 /**
  * The zone form: a trimmed name (2–60 characters), an optional description
  * (up to 200 characters; blank becomes `undefined`), and a center point inside
- * the Philippines. An out-of-bounds point is reported on `latitude`.
+ * Barangay Mi-isi. An out-of-bounds point is reported on `latitude`, with the
+ * swapped-coordinates hint when it isn't even in the Philippines.
  */
 export const zoneInputSchema = z
   .object({
@@ -58,9 +61,12 @@ export const zoneInputSchema = z
     latitude: coordinate("latitude"),
     longitude: coordinate("longitude"),
   })
-  .refine((zone) => isInPhilippines(zone.latitude, zone.longitude), {
-    message: OUTSIDE_PHILIPPINES_MESSAGE,
-    path: ["latitude"],
+  .superRefine((zone, ctx) => {
+    if (!isInPhilippines(zone.latitude, zone.longitude)) {
+      ctx.addIssue({ code: "custom", message: OUTSIDE_PHILIPPINES_MESSAGE, path: ["latitude"] });
+    } else if (!isInMiIsi(zone.latitude, zone.longitude)) {
+      ctx.addIssue({ code: "custom", message: OUTSIDE_MI_ISI_MESSAGE, path: ["latitude"] });
+    }
   });
 
 /** A parsed, valid zone form. */
