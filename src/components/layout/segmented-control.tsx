@@ -3,6 +3,7 @@
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { cn } from "cn";
 
 const TRACK_CLASS = "inline-flex flex-wrap gap-0.5 self-start rounded-[9px] bg-[#eef2ef] p-[3px] dark:bg-muted";
@@ -14,6 +15,10 @@ const CHOSEN_CLASS = "bg-card text-foreground shadow-[0_1px_2px_rgb(23_35_28/.1)
 export interface SegmentedOption<T extends string> {
   value: T;
   label: string;
+  /** Shown before the label, such as a colored icon. */
+  leading?: ReactNode;
+  /** Classes for this segment, such as its own `data-checked:` colors. */
+  className?: string;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -48,7 +53,7 @@ export function SegmentedControl<T extends string>({
       value={value}
       onValueChange={(next) => onChange(next as T)}
       disabled={disabled}
-      className={cn(TRACK_CLASS, "aria-invalid:ring-2 aria-invalid:ring-destructive/40")}
+      className={cn(TRACK_CLASS, "cursor-pointer aria-invalid:ring-2 aria-invalid:ring-destructive/40")}
     >
       {options.map((option) => (
         <Radio.Root
@@ -56,9 +61,11 @@ export function SegmentedControl<T extends string>({
           value={option.value}
           className={cn(
             SEGMENT_CLASS,
-            "data-disabled:cursor-not-allowed data-disabled:opacity-60 data-checked:bg-card data-checked:text-foreground data-checked:shadow-[0_1px_2px_rgb(23_35_28/.1)]",
+            "gap-1.5 data-disabled:cursor-not-allowed data-disabled:opacity-60 data-checked:bg-card data-checked:text-foreground data-checked:shadow-[0_1px_2px_rgb(23_35_28/.1)]",
+            option.className,
           )}
         >
+          {option.leading}
           {option.label}
         </Radio.Root>
       ))}

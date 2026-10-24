@@ -38,7 +38,7 @@ export function SearchButton() {
         type="button"
         onClick={() => setOpen(true)}
         aria-keyshortcuts="Meta+K Control+K"
-        className="hidden h-10 w-[205px] items-center gap-[9px] rounded-[9px] border border-border bg-[#f8faf8] px-[11px] text-left text-[13px] text-[#718077] outline-none transition-colors hover:border-accent-border focus-visible:ring-3 focus-visible:ring-ring/25 md:flex dark:bg-muted dark:text-muted-foreground"
+        className="hidden h-10 w-[clamp(240px,30vw,400px)] items-center gap-[9px] rounded-[9px] border border-border bg-[#f8faf8] px-[11px] text-left text-[13px] text-[#718077] outline-none transition-colors hover:border-accent-border focus-visible:ring-3 focus-visible:ring-ring/25 md:flex dark:bg-muted dark:text-muted-foreground"
       >
         <Search className="size-[18px] shrink-0" aria-hidden="true" strokeWidth={1.75} />
         <span className="flex-1">Search</span>

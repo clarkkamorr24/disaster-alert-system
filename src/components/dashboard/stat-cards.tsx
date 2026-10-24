@@ -40,6 +40,7 @@ export async function StatCards() {
         hint={`${criticalAlerts.toLocaleString("en-US")} critical`}
         icon={CircleAlert}
         tone="critical"
+        hintPulse={criticalAlerts > 0}
       />
       <StatCard
         label="Active members"

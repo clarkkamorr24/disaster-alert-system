@@ -14,3 +14,18 @@ export const HAZARD_TINT_CLASSES: Record<HazardType, string> = {
   STRONG_WIND: "bg-[#e9f5f3] text-[#0f6b63] dark:bg-[#7fd1c6]/15 dark:text-[#7fd1c6]",
   DROUGHT: "bg-[#fdf3e7] text-[#9a4d0b] dark:bg-[#f0b27a]/15 dark:text-[#f0b27a]",
 };
+
+/**
+ * Sets `--hazard-accent` to each hazard's icon color, in light and dark mode, so a
+ * component can use it for borders or tints (such as a chosen hazard tile).
+ */
+export const HAZARD_ACCENT_CLASSES: Record<HazardType, string> = {
+  VOLCANIC_ERUPTION: "[--hazard-accent:#a4473f] dark:[--hazard-accent:#ff9b8f]",
+  ASHFALL: "[--hazard-accent:#6b625b] dark:[--hazard-accent:#c9bfb6]",
+  LAHAR: "[--hazard-accent:#8a5a12] dark:[--hazard-accent:#e8b766]",
+  TYPHOON: "[--hazard-accent:#2f5fb3] dark:[--hazard-accent:#93b4ec]",
+  HEAVY_RAIN: "[--hazard-accent:#1f6f9c] dark:[--hazard-accent:#8cc6e6]",
+  FLOOD: "[--hazard-accent:#16707f] dark:[--hazard-accent:#7fcfdb]",
+  STRONG_WIND: "[--hazard-accent:#0f6b63] dark:[--hazard-accent:#7fd1c6]",
+  DROUGHT: "[--hazard-accent:#9a4d0b] dark:[--hazard-accent:#f0b27a]",
+};

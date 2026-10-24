@@ -18,7 +18,7 @@ import { ZoneMapClient } from "@/components/zones/zone-map-client";
 import { requireOfficer } from "@/lib/auth/dal";
 import { formatManilaTime } from "@/lib/datetime";
 import { SEVERITIES } from "@/lib/domain/hazards";
-import { severityTone } from "@/lib/domain/status-tone";
+import { isCriticalActive, severityTone } from "@/lib/domain/status-tone";
 import { loadZoneOverview } from "@/lib/zones/overview";
 import type { ZoneMapPoint } from "@/types/zone";
 
@@ -79,7 +79,7 @@ function ZoneTable({ zones }: { zones: ZoneMapPoint[] }) {
             </TableCell>
             <TableCell className="tabular-nums">{zone.memberCount}</TableCell>
             <TableCell>
-              <StatusPill tone={severityTone(zone.worstSeverity)}>
+              <StatusPill tone={severityTone(zone.worstSeverity)} pulse={isCriticalActive(zone.worstSeverity)}>
                 {zone.worstSeverity ? SEVERITIES[zone.worstSeverity].label : "Clear"}
               </StatusPill>
             </TableCell>

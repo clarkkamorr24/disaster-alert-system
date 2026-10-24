@@ -37,6 +37,8 @@ interface ComposeFormProps {
   idempotencyKey: string;
   /** The SMS prefix every message starts with, such as `Mi-isi FA:`. */
   prefix: string;
+  /** Shown as the sender in the SMS preview. */
+  senderId: string;
   /** Whether links are blocked (the default sender ID can't send them). */
   blockLinks: boolean;
   /** `null` when the balance couldn't be read. */
@@ -72,7 +74,7 @@ function blockedReason(args: {
 
 /** The broadcast composer with its sticky Summary: template, message, and zones (or the resend's members). */
 export function ComposeForm(props: ComposeFormProps) {
-  const { idempotencyKey, prefix, blockLinks, balance, zones, templates, alert, resend } = props;
+  const { idempotencyKey, prefix, senderId, blockLinks, balance, zones, templates, alert, resend } = props;
   const [templateId, setTemplateId] = useState(props.initialTemplateId);
   const [message, setMessage] = useState(props.initialMessage);
   const [zoneIds, setZoneIds] = useState(resend ? [] : (alert?.zoneIds ?? []));
@@ -140,7 +142,7 @@ export function ComposeForm(props: ComposeFormProps) {
           value={message}
           onChange={setMessage}
           error={errors.length > 0 ? errors.join(" ") : undefined}
-          helper={`${text.length} characters · ${creditsPerMember} SMS ${creditsPerMember === 1 ? "credit" : "credits"} per member · “${prefix}” is added to the start.`}
+          helper={`${text.length} characters · ${creditsPerMember} SMS ${creditsPerMember === 1 ? "credit" : "credits"} per member·`}
           rows={6}
         />
 
@@ -180,7 +182,7 @@ export function ComposeForm(props: ComposeFormProps) {
         ]}
         totalCredits={totalCredits}
         balance={balance}
-        prefix={prefix}
+        senderId={senderId}
         text={text}
         blockedReason={reason}
         pending={pending}

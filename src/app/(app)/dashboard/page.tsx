@@ -1,6 +1,4 @@
-import { Plus } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Suspense } from "react";
 
 import { ActiveAlerts, ActiveAlertsSkeleton } from "@/components/dashboard/active-alerts";
@@ -9,8 +7,7 @@ import { DashboardFooter } from "@/components/dashboard/dashboard-footer";
 import { RecentBroadcasts, RecentBroadcastsSkeleton } from "@/components/dashboard/recent-broadcasts";
 import { StatCardSkeleton, StatCards, StatCardsSkeleton } from "@/components/dashboard/stat-cards";
 import { ZoneOverview, ZoneOverviewSkeleton } from "@/components/dashboard/zone-overview";
-import { PAGE_ACTION_CLASS, PageHeader } from "@/components/layout/page-header";
-import { buttonVariants } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 
 export const metadata: Metadata = {
   title: "Dashboard · Mi-isi Disaster Alert",
@@ -23,12 +20,6 @@ export default function DashboardPage() {
         eyebrow="Association overview"
         title="Dashboard"
         description="Active hazards, zone conditions and recent SMS broadcasts."
-        action={
-          <Link href="/alerts/new" className={buttonVariants({ className: PAGE_ACTION_CLASS })}>
-            <Plus data-icon="inline-start" />
-            New alert
-          </Link>
-        }
       />
 
       {/* Both boundaries share one grid, so the four cards line up whichever loads first. */}

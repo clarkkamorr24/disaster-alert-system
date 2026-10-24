@@ -14,10 +14,11 @@ const SAMPLE = {
 interface TemplatePreviewProps {
   body: string;
   prefix: string;
+  senderId: string;
 }
 
 /** The sticky card next to the template form: the template filled with sample values, and its length. */
-export function TemplatePreview({ body, prefix }: TemplatePreviewProps) {
+export function TemplatePreview({ body, prefix, senderId }: TemplatePreviewProps) {
   // Null until hydrated, so the server never renders a clock reading.
   const now = useCurrentMinute();
   const trimmed = body.trim();
@@ -38,7 +39,7 @@ export function TemplatePreview({ body, prefix }: TemplatePreviewProps) {
           Sample values: {SAMPLE.hazard}, {SAMPLE.level}, {SAMPLE.zones.join(" and ")}, the current time.
         </p>
       </div>
-      <SmsPreview text={text} prefix={prefix} />
+      <SmsPreview text={text} senderId={senderId} />
       {text && (
         <p className="text-[13px] text-muted-foreground tabular-nums">
           {text.length} characters · {credits} {credits === 1 ? "credit" : "credits"} per member

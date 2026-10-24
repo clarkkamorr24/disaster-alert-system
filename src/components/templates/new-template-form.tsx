@@ -7,7 +7,8 @@ import { getEnv } from "@/lib/env";
 export async function NewTemplateForm() {
   await requireOfficer();
 
-  return <TemplateForm prefix={getEnv().SMS_MESSAGE_PREFIX} />;
+  const { SMS_MESSAGE_PREFIX, UNISMS_SENDER_ID } = getEnv();
+  return <TemplateForm prefix={SMS_MESSAGE_PREFIX} senderId={UNISMS_SENDER_ID} />;
 }
 
 /** Placeholder while {@link NewTemplateForm} loads: the form card and the preview card. */

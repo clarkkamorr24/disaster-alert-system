@@ -19,10 +19,12 @@ interface StatCardProps {
   hint: string;
   icon: LucideIcon;
   tone: StatCardTone;
+  /** Puts a pulsing Critical dot before the hint, such as when any active alert is Critical. */
+  hintPulse?: boolean;
 }
 
 /** A dashboard tile: tinted icon, label, a big number, and a small line under it. */
-export function StatCard({ label, value, hint, icon: Icon, tone }: StatCardProps) {
+export function StatCard({ label, value, hint, icon: Icon, tone, hintPulse = false }: StatCardProps) {
   return (
     <div className="flex min-h-[112px] items-start gap-[13px] rounded-xl border bg-card p-[19px]">
       <span className={cn("grid size-[39px] shrink-0 place-items-center rounded-[10px]", TILE_CLASS[tone])}>
@@ -33,7 +35,12 @@ export function StatCard({ label, value, hint, icon: Icon, tone }: StatCardProps
         <strong className="mt-[3px] mb-px font-heading text-[25px] leading-[1.25] font-bold tabular-nums">
           {value}
         </strong>
-        <small className="text-[11px] text-muted-foreground">{hint}</small>
+        <small className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          {hintPulse && (
+            <span aria-hidden="true" className="critical-ping size-1.5 shrink-0 rounded-full bg-status-critical" />
+          )}
+          {hint}
+        </small>
       </div>
     </div>
   );

@@ -19,6 +19,8 @@ import type { TemplateFormValues } from "@/types/template";
 interface TemplateFormProps {
   /** The SMS prefix every message starts with, such as `Mi-isi FA:`. */
   prefix: string;
+  /** Shown as the sender in the SMS preview. */
+  senderId: string;
   /** The template to edit; omit to create a new one. */
   template?: TemplateFormValues;
 }
@@ -43,7 +45,7 @@ function errorProps(id: string, message: string | undefined) {
 }
 
 /** The template form card with the sticky sample preview beside it (stacked on narrow screens). */
-export function TemplateForm({ prefix, template }: TemplateFormProps) {
+export function TemplateForm({ prefix, senderId, template }: TemplateFormProps) {
   async function submit(prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
     let result: ActionResult;
     try {
@@ -171,7 +173,7 @@ export function TemplateForm({ prefix, template }: TemplateFormProps) {
         </Button>
       </form>
 
-      <TemplatePreview body={body} prefix={prefix} />
+      <TemplatePreview body={body} prefix={prefix} senderId={senderId} />
     </div>
   );
 }

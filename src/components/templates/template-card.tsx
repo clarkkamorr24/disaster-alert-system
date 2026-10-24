@@ -1,12 +1,9 @@
-import { MessageSquareText, Pencil } from "lucide-react";
-import Link from "next/link";
+import { MessageSquareText } from "lucide-react";
 import { cn } from "cn";
 
 import { HazardIconTile } from "@/components/alerts/hazard-icon-tile";
 import { HAZARD_TINT_CLASSES } from "@/components/alerts/hazard-tint";
-import { DuplicateTemplateButton } from "@/components/templates/duplicate-template-button";
 import { TemplateCardMenu } from "@/components/templates/template-card-menu";
-import { buttonVariants } from "@/components/ui/button";
 import type { HazardType } from "@/generated/prisma/enums";
 import { HAZARD_TYPES } from "@/lib/domain/hazards";
 import { usageLabel } from "@/lib/templates/usage";
@@ -61,19 +58,8 @@ export function TemplateCard({ id, name, hazardType, body, usageCount }: Templat
         {body}
       </p>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t pt-3.5">
+      <div className="flex flex-wrap items-center">
         <span className="text-xs text-subtle-foreground">{usageLabel(usageCount)}</span>
-        <div className="flex gap-2">
-          <DuplicateTemplateButton id={id} name={name} />
-          <Link
-            href={`/templates/${id}`}
-            aria-label={`Edit template "${name}"`}
-            className={buttonVariants({ variant: "outline", className: "h-[34px] gap-1.5 px-2.5 text-[11px]" })}
-          >
-            <Pencil className="size-3.5" aria-hidden="true" />
-            Edit
-          </Link>
-        </div>
       </div>
     </article>
   );

@@ -1,9 +1,8 @@
-import { ChevronRight, MapIcon, Plus, ShieldCheck } from "lucide-react";
+import { ChevronRight, MapIcon, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { cn } from "cn";
 
 import { SectionHeader, SectionHeaderSkeleton } from "@/components/dashboard/section-header";
-import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Severity } from "@/generated/prisma/enums";
 import { requireOfficer } from "@/lib/auth/dal";
@@ -55,10 +54,6 @@ export async function ActiveAlerts() {
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card p-6 text-center">
           <ShieldCheck className="size-6 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
           <p className="text-sm text-muted-foreground">No active alerts.</p>
-          <Link href="/alerts/new" className={buttonVariants({ className: "h-11 gap-2 px-[17px] text-[13px]" })}>
-            <Plus data-icon="inline-start" />
-            New alert
-          </Link>
         </div>
       ) : (
         <ul className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-[14px]">

@@ -37,8 +37,15 @@ export function StatusDot({ tone, className }: { tone: StatusTone; className?: s
   );
 }
 
+interface StatusPillProps {
+  tone: StatusTone;
+  /** Pulses the dot for an active Critical state (see `isCriticalActive`). */
+  pulse?: boolean;
+  children: ReactNode;
+}
+
 /** A status label on a soft background with a dot, such as `CRITICAL` or `CLEAR`. */
-export function StatusPill({ tone, children }: { tone: StatusTone; children: ReactNode }) {
+export function StatusPill({ tone, pulse = false, children }: StatusPillProps) {
   return (
     <span
       className={cn(
@@ -46,7 +53,7 @@ export function StatusPill({ tone, children }: { tone: StatusTone; children: Rea
         PILL_CLASS[tone],
       )}
     >
-      <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-current" />
+      <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full bg-current", pulse && "critical-ping")} />
       {children}
     </span>
   );

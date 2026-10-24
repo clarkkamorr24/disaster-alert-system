@@ -37,6 +37,7 @@ export async function TemplateDetail({ params }: TemplateDetailProps) {
         <TemplateForm
           key={`${values.name}|${values.hazardType}|${values.body}`}
           prefix={getEnv().SMS_MESSAGE_PREFIX}
+          senderId={getEnv().UNISMS_SENDER_ID}
           template={values}
         />
 

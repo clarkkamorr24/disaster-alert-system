@@ -48,6 +48,8 @@
   --color-any-hazard-tile-foreground: var(--any-hazard-tile-foreground);
   --color-dashed-border: var(--dashed-border);
   --color-scrim: var(--scrim);
+  --color-phone-frame: var(--phone-frame);
+  --color-sms-bubble: var(--sms-bubble);
   --color-conditions: var(--conditions);
   --color-conditions-foreground: var(--conditions-foreground);
   --color-conditions-label: var(--conditions-label);
@@ -133,6 +135,9 @@
   --dashed-border: #bccbc0;
   /* Dialog and drawer backdrops; use with an opacity, e.g. bg-scrim/55. */
   --scrim: #0b1d12;
+  /* The SMS preview's phone mockup: the frame (same in both themes) and the received-message bubble. */
+  --phone-frame: #18241d;
+  --sms-bubble: #e4e8e5;
   /* The zones page's Current conditions card; dark green in both themes. */
   --conditions: #17482d;
   --conditions-foreground: #ffffff;
@@ -225,6 +230,7 @@
   --any-hazard-tile: #16271c;
   --any-hazard-tile-foreground: #7fd1a0;
   --dashed-border: #3b4b41;
+  --sms-bubble: #2a3630;
   --conditions-shadow: 0 0 #0000;
   --destructive: oklch(0.704 0.191 22.216);
   --border: #26302a;
@@ -291,6 +297,76 @@
     @apply font-sans;
   }
 }
+
+/*
+ * Critical states (an active Critical alert, or a zone whose worst active alert is Critical)
+ * pulse so they stand apart from High, Moderate, and Low. Only opacity and transform animate,
+ * on pseudo-elements, so nothing reflows. Reduced-motion users get a still version.
+ */
+@keyframes critical-ping {
+  0% {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@keyframes critical-glow {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* On a status dot: a ring in the dot's color grows out of it and fades. */
+@utility critical-ping {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-color: inherit;
+    pointer-events: none;
+    animation: critical-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      display: none;
+    }
+  }
+}
+
+/* On a card (needs `relative`): a red inner border and soft glow fade in and out. */
+@utility critical-glow {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow:
+      inset 0 0 0 1.5px var(--marker-critical),
+      inset 0 0 16px color-mix(in srgb, var(--marker-critical) 16%, transparent);
+    pointer-events: none;
+    animation: critical-glow 1.6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      animation: none;
+      opacity: 0.7;
+    }
+  }
+}
 /*
  * Leaflet map overrides. leaflet.css is unlayered, which beats anything in @layer, so these
  * stay unlayered too; the extra ancestor outranks Leaflet's own selectors whatever the load order.
@@ -327,6 +403,24 @@ body .leaflet-container {
   border-radius: 50% 50% 50% 0;
   background: var(--pin-color);
   transform: rotate(-45deg);
+}
+
+/* Critical pins pulse a ring behind the teardrop, like the critical-ping dots. */
+.zone-map .zone-pin--critical::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 50%;
+  background: var(--pin-color);
+  pointer-events: none;
+  animation: critical-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zone-map .zone-pin--critical::after {
+    display: none;
+  }
 }
 
 .zone-pin--critical { --pin-color: var(--marker-critical); }
