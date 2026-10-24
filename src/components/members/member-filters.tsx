@@ -1,91 +1,78 @@
 "use client";
 
-import { Search } from "lucide-react";
-import Form from "next/form";
+import { Filter } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { MemberListFilters, ZoneOption } from "@/types/member";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { memberListHref } from "@/lib/members/list-filters";
+import type { MemberListFilters, MemberStatusFilter, ZoneOption } from "@/types/member";
 
-const STATUS_ITEMS = [
+const STATUS_ITEMS: { value: MemberStatusFilter; label: string }[] = [
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
   { value: "all", label: "All" },
 ];
+
+const TRIGGER_CLASS =
+  "h-11 gap-[7px] rounded-lg border-input bg-card px-3 text-xs font-semibold text-control-foreground data-[size=default]:h-11 sm:h-[39px] sm:data-[size=default]:h-[39px]";
 
 interface MemberFiltersProps {
   filters: MemberListFilters;
   zones: ZoneOption[];
 }
 
-/** Search, zone, and status filters. Submitting navigates to `/members` with them in the URL, back on page 1. */
+/**
+ * The zone and status selects of the members toolbar. Choosing one goes to
+ * `/members` with it in the URL, keeping the search, back on page 1.
+ */
 export function MemberFilters({ filters, zones }: MemberFiltersProps) {
+  const router = useRouter();
   const zoneItems = [
-    { value: null, label: "All zones" },
+    { value: null, label: "Filter: all zones" },
     ...zones.map((zone) => ({ value: zone.id, label: zone.name })),
   ];
 
+  function go(next: Partial<MemberListFilters>) {
+    router.push(memberListHref({ ...filters, ...next, page: 1 }));
+  }
+
   return (
-    <Form
-      action="/members"
-      className="grid gap-3 sm:grid-cols-2 md:grid-cols-[minmax(0,1fr)_12rem_9rem_auto] md:items-end"
-    >
-      <div className="flex flex-col gap-2 sm:col-span-2 md:col-span-1">
-        <Label htmlFor="member-search">Search</Label>
-        <Input
-          id="member-search"
-          name="q"
-          type="search"
-          placeholder="Name or phone number"
-          defaultValue={filters.q}
-          className="h-11"
-        />
-      </div>
+    <>
+      <Select
+        items={zoneItems}
+        value={filters.zoneId ?? null}
+        onValueChange={(value) => go({ zoneId: (value as string | null) ?? undefined })}
+      >
+        <SelectTrigger aria-label="Filter by zone" className={TRIGGER_CLASS}>
+          <Filter className="size-[15px]" strokeWidth={1.75} aria-hidden="true" />
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {zoneItems.map((item) => (
+            <SelectItem key={item.value ?? "all"} value={item.value} className="min-h-11 sm:min-h-9">
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="member-zone-filter">Zone</Label>
-        <Select name="zone" items={zoneItems} defaultValue={filters.zoneId ?? null}>
-          <SelectTrigger id="member-zone-filter" className="h-11 w-full text-base">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {zoneItems.map((item) => (
-              <SelectItem key={item.value ?? "all"} value={item.value} className="min-h-11 text-base">
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="member-status-filter">Status</Label>
-        <Select name="status" items={STATUS_ITEMS} defaultValue={filters.status}>
-          <SelectTrigger id="member-status-filter" className="h-11 w-full text-base">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUS_ITEMS.map((item) => (
-              <SelectItem key={item.value} value={item.value} className="min-h-11 text-base">
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Button type="submit" variant="outline" className="h-11 px-4 text-base sm:col-span-2 md:col-span-1">
-        <Search data-icon="inline-start" />
-        Search
-      </Button>
-    </Form>
+      <Select
+        items={STATUS_ITEMS}
+        value={filters.status}
+        onValueChange={(value) => go({ status: value as MemberStatusFilter })}
+      >
+        <SelectTrigger aria-label="Filter by status" className={TRIGGER_CLASS}>
+          <span className="font-normal text-muted-foreground">Status:</span>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {STATUS_ITEMS.map((item) => (
+            <SelectItem key={item.value} value={item.value} className="min-h-11 sm:min-h-9">
+              {item.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </>
   );
 }

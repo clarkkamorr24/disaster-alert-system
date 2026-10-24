@@ -46,7 +46,7 @@ export function DeleteZoneButton({ id, name }: DeleteZoneButtonProps) {
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger render={<Button variant="destructive" className="h-11 px-4 text-base" />}>
+      <AlertDialogTrigger render={<Button variant="destructive" className="h-11 px-4 text-[13px]" />}>
         <Trash2 data-icon="inline-start" />
         Delete zone
       </AlertDialogTrigger>

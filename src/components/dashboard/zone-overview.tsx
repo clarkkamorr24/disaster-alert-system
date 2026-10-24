@@ -17,68 +17,10 @@ import { WeatherIcon } from "@/components/weather/weather-icon";
 import { ZoneMapClient } from "@/components/zones/zone-map-client";
 import { requireOfficer } from "@/lib/auth/dal";
 import { formatManilaTime } from "@/lib/datetime";
-import { prisma } from "@/lib/db";
 import { SEVERITIES } from "@/lib/domain/hazards";
 import { severityTone } from "@/lib/domain/status-tone";
-import { computeZoneStatuses } from "@/lib/domain/zone-status";
-import { describeWeatherCode, forecastTimeToDate, getZoneWeather } from "@/lib/weather/open-meteo";
+import { loadZoneOverview } from "@/lib/zones/overview";
 import type { ZoneMapPoint } from "@/types/zone";
-
-/**
- * Loads every zone with its member count, worst active alert, and weather, plus
- * the time of the oldest weather reading (`null` when none came back).
- */
-async function loadZonePoints(): Promise<{ zones: ZoneMapPoint[]; weatherUpdatedAt: Date | null }> {
-  const [zones, alerts] = await Promise.all([
-    prisma.farmZone.findMany({
-      orderBy: { name: "asc" },
-      select: {
-        id: true,
-        name: true,
-        latitude: true,
-        longitude: true,
-        _count: { select: { members: { where: { isActive: true } } } },
-      },
-    }),
-    prisma.hazardAlert.findMany({
-      where: { status: "ACTIVE" },
-      orderBy: { createdAt: "desc" },
-      select: { id: true, title: true, severity: true, zones: { select: { id: true } } },
-    }),
-  ]);
-
-  const statuses = computeZoneStatuses(
-    zones.map((zone) => zone.id),
-    alerts.map((alert) => ({ ...alert, zoneIds: alert.zones.map((zone) => zone.id) })),
-  );
-  const weather = await getZoneWeather(zones);
-  const titleById = new Map(alerts.map((alert) => [alert.id, alert.title]));
-
-  // Open-Meteo times are fixed-length local timestamps, so they sort as strings.
-  const oldestFetchedAt = Object.values(weather)
-    .flatMap((entry) => (entry ? [entry.fetchedAt] : []))
-    .sort()[0];
-
-  return {
-    weatherUpdatedAt: oldestFetchedAt ? forecastTimeToDate(oldestFetchedAt) : null,
-    zones: zones.map((zone, i) => {
-      const current = weather[zone.id] ?? null;
-      return {
-        id: zone.id,
-        name: zone.name,
-        latitude: zone.latitude,
-        longitude: zone.longitude,
-        worstSeverity: statuses[i].worstSeverity,
-        activeAlertTitles: statuses[i].activeAlertIds.map((id) => titleById.get(id) ?? ""),
-        memberCount: zone._count.members,
-        rainfallLevel: current?.rainfallLevel ?? null,
-        weatherCode: current?.weatherCode ?? null,
-        maxRainNext24h: current?.maxRainNext24h ?? null,
-        condition: current ? describeWeatherCode(current.weatherCode) : null,
-      };
-    }),
-  };
-}
 
 function WeatherUpdated({ at }: { at: Date | null }) {
   const Icon = at ? CloudSun : CloudOff;
@@ -170,7 +112,7 @@ function ZoneTable({ zones }: { zones: ZoneMapPoint[] }) {
  */
 export async function ZoneOverview() {
   await requireOfficer();
-  const { zones, weatherUpdatedAt } = await loadZonePoints();
+  const { zones, weatherUpdatedAt } = await loadZoneOverview();
 
   return (
     <section aria-labelledby="zones-heading">

@@ -51,21 +51,27 @@ function parseWith<T>(schema: z.ZodType<T>, formData: FormData): Parsed<T> {
   };
 }
 
-/** Adds a member from the member form, records consent now, then redirects to `/members`. */
+/**
+ * Adds a member from the member form and records consent now. Redirects to
+ * `/members`, unless the form sends `stay=1` (the Add member pop-up): then it
+ * returns the new member's id and the current page refreshes in place.
+ */
 export async function createMember(
-  _prev: ActionResult | null,
+  _prev: ActionResult<{ id: string } | void> | null,
   formData: FormData,
-): Promise<ActionResult> {
+): Promise<ActionResult<{ id: string } | void>> {
   await requireOfficer();
 
   const parsed = parseWith(memberInputSchema, formData);
   if (!parsed.success) return parsed.result;
 
   const { firstName, lastName, phone, zoneId, crops, notes } = parsed.data;
+  let id: string;
   try {
-    await prisma.member.create({
+    ({ id } = await prisma.member.create({
       data: { firstName, lastName, phone, zoneId, crops, notes, consentAt: new Date() },
-    });
+      select: { id: true },
+    }));
   } catch (error) {
     if (isUniqueViolation(error, "phone")) return DUPLICATE_PHONE;
     console.error("createMember failed", error);
@@ -73,6 +79,7 @@ export async function createMember(
   }
 
   revalidatePath("/members", "layout");
+  if (formData.get("stay") === "1") return { success: true, data: { id } };
   redirect("/members");
 }
 
@@ -120,11 +127,16 @@ export async function setMemberActive(id: string, isActive: boolean): Promise<Ac
 
 /**
  * Permanently deletes a member who asked to be removed (RA 10173), then
- * redirects to `/members`. Refused unless `confirmation` is exactly `DELETE`.
- * Past delivery reports keep their phone and name snapshot; their `memberId`
- * becomes null.
+ * redirects to `/members`, unless `stay` is set (the list's row menu): then the
+ * current page, with its filters, refreshes in place. Refused unless
+ * `confirmation` is exactly `DELETE`. Past delivery reports keep their phone
+ * and name snapshot; their `memberId` becomes null.
  */
-export async function deleteMember(id: string, confirmation: string): Promise<ActionResult> {
+export async function deleteMember(
+  id: string,
+  confirmation: string,
+  { stay = false }: { stay?: boolean } = {},
+): Promise<ActionResult> {
   await requireOfficer();
 
   if (confirmation !== DELETE_CONFIRMATION) {
@@ -139,5 +151,6 @@ export async function deleteMember(id: string, confirmation: string): Promise<Ac
   }
 
   revalidatePath("/members", "layout");
+  if (stay) return { success: true, data: undefined };
   redirect("/members");
 }

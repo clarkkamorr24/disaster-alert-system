@@ -4,6 +4,7 @@ import { startTransition, useActionState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 import { createMember, updateMember } from "@/actions/members";
+import { PhoneInput } from "@/components/members/phone-input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -26,9 +27,18 @@ interface MemberFormProps {
   zones: ZoneOption[];
   /** The member to edit; omit to add a new one. */
   member?: MemberFormValues;
-  /** When consent was recorded, already formatted; shown on edit instead of the checkbox. */
-  consentRecordedOn?: string;
+  /** `compact` (the Add member pop-up) leaves out Notes and puts Cancel and Save on the right. */
+  layout?: "page" | "compact";
+  /**
+   * Set by the pop-up: the new member is saved without leaving the page, then
+   * this is called. Without it, a successful add redirects to `/members`.
+   */
+  onCreated?: () => void;
+  /** Shows a Cancel button that calls this. */
+  onCancel?: () => void;
 }
+
+type SubmitResult = ActionResult<{ id: string } | void>;
 
 interface FieldValues {
   firstName: string;
@@ -43,7 +53,8 @@ function initialValues(member: MemberFormValues | undefined): FieldValues {
   return {
     firstName: member?.firstName ?? "",
     lastName: member?.lastName ?? "",
-    phone: member ? formatPhoneForDisplay(member.phone) : "",
+    // The +63 box shows the country code, so the input drops the leading 0.
+    phone: member ? formatPhoneForDisplay(member.phone).replace(/^0/, "") : "",
     zoneId: member?.zoneId ?? "",
     crops: member?.crops ?? "",
     notes: member?.notes ?? "",
@@ -64,25 +75,41 @@ function FieldError({ id, message }: FieldErrorProps) {
   );
 }
 
-/** Input props that link a field to its error message. */
-function errorProps(id: string, message: string | undefined) {
-  return message ? { "aria-invalid": true, "aria-describedby": id } : {};
+/** Input props that link a field to its error message, plus an optional helper text. */
+function describedBy(errorId: string, message: string | undefined, helperId?: string) {
+  const ids = [message ? errorId : undefined, helperId].filter(Boolean).join(" ");
+  return {
+    ...(message ? { "aria-invalid": true } : {}),
+    ...(ids ? { "aria-describedby": ids } : {}),
+  };
 }
 
-export function MemberForm({ zones, member, consentRecordedOn }: MemberFormProps) {
-  async function submit(prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
-    let result: ActionResult;
+export function MemberForm({
+  zones,
+  member,
+  layout = "page",
+  onCreated,
+  onCancel,
+}: MemberFormProps) {
+  async function submit(prev: SubmitResult | null, formData: FormData): Promise<SubmitResult> {
+    let result: SubmitResult;
     try {
       result = member
-        ? await updateMember(member.id, prev, formData)
+        ? await updateMember(member.id, null, formData)
         : await createMember(prev, formData);
     } catch (error) {
       // A successful create redirects to /members; let Next.js finish the navigation.
       if (isRedirectError(error)) toast.success("Member added.");
       throw error;
     }
-    if (result.success) toast.success("Member saved.");
-    else toast.error(result.error);
+    if (!result.success) {
+      toast.error(result.error);
+    } else if (member) {
+      toast.success("Member saved.");
+    } else {
+      toast.success("Member added.");
+      onCreated?.();
+    }
     return result;
   }
 
@@ -90,6 +117,7 @@ export function MemberForm({ zones, member, consentRecordedOn }: MemberFormProps
   const fieldErrors = state && !state.success ? state.fieldErrors : undefined;
   const values = initialValues(member);
   const error = (field: string) => fieldErrors?.[field]?.[0];
+  const compact = layout === "compact";
 
   // Submitting through onSubmit skips React's automatic form reset, which
   // would desync the hidden inputs of the Base UI Select and Checkbox from
@@ -99,6 +127,7 @@ export function MemberForm({ zones, member, consentRecordedOn }: MemberFormProps
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    if (onCreated) formData.set("stay", "1");
     startTransition(() => formAction(formData));
   }
 
@@ -106,7 +135,7 @@ export function MemberForm({ zones, member, consentRecordedOn }: MemberFormProps
 
   return (
     <form method="post" onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 min-[400px]:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor="member-first-name">First name</Label>
           <Input
@@ -116,7 +145,7 @@ export function MemberForm({ zones, member, consentRecordedOn }: MemberFormProps
             maxLength={60}
             autoComplete="off"
             defaultValue={values.firstName}
-            {...errorProps("member-first-name-error", error("firstName"))}
+            {...describedBy("member-first-name-error", error("firstName"))}
             className="h-11"
           />
           <FieldError id="member-first-name-error" message={error("firstName")} />
@@ -131,7 +160,7 @@ export function MemberForm({ zones, member, consentRecordedOn }: MemberFormProps
             maxLength={60}
             autoComplete="off"
             defaultValue={values.lastName}
-            {...errorProps("member-last-name-error", error("lastName"))}
+            {...describedBy("member-last-name-error", error("lastName"))}
             className="h-11"
           />
           <FieldError id="member-last-name-error" message={error("lastName")} />
@@ -140,28 +169,26 @@ export function MemberForm({ zones, member, consentRecordedOn }: MemberFormProps
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="member-phone">Mobile number</Label>
-        <Input
+        <PhoneInput
           id="member-phone"
           name="phone"
-          type="tel"
-          inputMode="tel"
           required
-          autoComplete="off"
-          placeholder="0917 123 4567"
           defaultValue={values.phone}
-          {...errorProps("member-phone-error", error("phone"))}
-          className="h-11"
+          {...describedBy("member-phone-error", error("phone"), "member-phone-help")}
         />
+        <p id="member-phone-help" className="text-xs text-muted-foreground">
+          Saved in +63 format. 09xx numbers are converted automatically.
+        </p>
         <FieldError id="member-phone-error" message={error("phone")} />
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor="member-zone">Zone</Label>
+        <Label htmlFor="member-zone">Home zone</Label>
         <Select name="zoneId" items={zoneItems} defaultValue={values.zoneId || null}>
           <SelectTrigger
             id="member-zone"
-            {...errorProps("member-zone-error", error("zoneId"))}
-            className="h-11 w-full text-base"
+            {...describedBy("member-zone-error", error("zoneId"))}
+            className="h-11 w-full text-base data-[size=default]:h-11"
           >
             <SelectValue placeholder="Choose a zone" />
           </SelectTrigger>
@@ -184,32 +211,33 @@ export function MemberForm({ zones, member, consentRecordedOn }: MemberFormProps
           maxLength={100}
           placeholder="Rice, corn"
           defaultValue={values.crops}
-          {...errorProps("member-crops-error", error("crops"))}
+          {...describedBy("member-crops-error", error("crops"))}
           className="h-11"
         />
         <FieldError id="member-crops-error" message={error("crops")} />
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="member-notes">Notes (optional)</Label>
-        <Textarea
-          id="member-notes"
-          name="notes"
-          maxLength={500}
-          defaultValue={values.notes}
-          {...errorProps("member-notes-error", error("notes"))}
-        />
-        <FieldError id="member-notes-error" message={error("notes")} />
-      </div>
+      {!compact && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="member-notes">Notes (optional)</Label>
+          <Textarea
+            id="member-notes"
+            name="notes"
+            maxLength={500}
+            defaultValue={values.notes}
+            {...describedBy("member-notes-error", error("notes"))}
+          />
+          <FieldError id="member-notes-error" message={error("notes")} />
+        </div>
+      )}
 
-      {member ? (
-        <p className="text-sm text-muted-foreground">Consent recorded on {consentRecordedOn}</p>
-      ) : (
+      {/* Consent is recorded once, on add; the detail header shows when. */}
+      {!member && (
         <div className="flex flex-col gap-2">
           <label className="flex min-h-11 cursor-pointer items-start gap-3 py-2">
             <Checkbox
               name="consent"
-              {...errorProps("member-consent-error", error("consent"))}
+              {...describedBy("member-consent-error", error("consent"))}
               className="mt-0.5 size-5"
             />
             <span className="text-sm">
@@ -220,9 +248,16 @@ export function MemberForm({ zones, member, consentRecordedOn }: MemberFormProps
         </div>
       )}
 
-      <Button type="submit" disabled={pending} className="h-11 self-start px-5 text-base">
-        {pending ? "Saving…" : member ? "Save member" : "Add member"}
-      </Button>
+      <div className={compact ? "mt-1 flex justify-end gap-2" : "flex gap-2"}>
+        {onCancel && (
+          <Button type="button" variant="outline" disabled={pending} onClick={onCancel} className="h-11 px-4 text-[13px]">
+            Cancel
+          </Button>
+        )}
+        <Button type="submit" disabled={pending} className="h-11 px-5 text-[13px]">
+          {pending ? "Saving…" : member || compact ? "Save member" : "Add member"}
+        </Button>
+      </div>
     </form>
   );
 }

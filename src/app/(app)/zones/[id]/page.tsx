@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { BackToZones } from "@/components/zones/back-to-zones";
+import { BackLink } from "@/components/layout/back-link";
 import { ZoneDetail, ZoneDetailSkeleton } from "@/components/zones/zone-detail";
 
 export const metadata: Metadata = {
@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 export default function ZonePage({ params }: { params: Promise<{ id: string }> }) {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <BackToZones />
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 pt-[22px] pb-8">
+      <BackLink href="/zones" label="Farm zones" />
       <Suspense fallback={<ZoneDetailSkeleton />}>
         <ZoneDetail params={params} />
       </Suspense>

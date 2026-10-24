@@ -1,9 +1,9 @@
-import { CloudOff } from "lucide-react";
+import { CloudOff, CloudSun, Droplets, Info } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RainfallBadge } from "@/components/weather/rainfall-badge";
+import { WeatherIcon } from "@/components/weather/weather-icon";
 import { formatManilaDateTime } from "@/lib/datetime";
 import { describeWeatherCode, forecastTimeToDate, getZoneWeather } from "@/lib/weather/open-meteo";
 
@@ -11,73 +11,101 @@ interface WeatherCardProps {
   zone: { id: string; latitude: number; longitude: number };
 }
 
-function WeatherCardHeader({ children }: { children?: ReactNode }) {
+function Shell({ children }: { children: ReactNode }) {
   return (
-    <CardHeader>
-      <CardTitle>
-        <h2 className="text-lg font-semibold">Weather</h2>
-      </CardTitle>
+    <section
+      aria-labelledby="zone-weather-heading"
+      className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-accent-border bg-accent"
+    >
       {children}
-    </CardHeader>
+    </section>
   );
 }
 
-/** Current weather and the heaviest rain in the next 24 hours at a zone's center. Render inside `<Suspense>`. */
+function Heading() {
+  return (
+    <h2 id="zone-weather-heading" className="text-[10px] font-bold tracking-[.08em] text-accent-muted-foreground uppercase">
+      Weather
+    </h2>
+  );
+}
+
+function Cell({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-2 p-[15px] text-accent-muted-foreground">
+      {icon}
+      <span className="flex flex-col text-[10px]">
+        {label}
+        <strong className="mt-0.5 text-xs text-foreground tabular-nums">{value}</strong>
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Current weather and the heaviest rain in the next 24 hours at a zone's center,
+ * styled like the zones page's Current conditions card but light. Render inside `<Suspense>`.
+ */
 export async function WeatherCard({ zone }: WeatherCardProps) {
   const weather = (await getZoneWeather([zone]))[zone.id];
 
   if (!weather) {
     return (
-      <Card>
-        <WeatherCardHeader />
-        <CardContent>
-          <p className="flex items-center gap-2 text-muted-foreground">
-            <CloudOff className="size-4 shrink-0" aria-hidden="true" />
+      <Shell>
+        <div className="flex flex-col gap-3 p-6">
+          <Heading />
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CloudOff className="size-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
             Weather unavailable
           </p>
-        </CardContent>
-      </Card>
+        </div>
+      </Shell>
     );
   }
 
   return (
-    <Card>
-      <WeatherCardHeader>
-        <CardDescription>Updated {formatManilaDateTime(forecastTimeToDate(weather.fetchedAt))}</CardDescription>
-      </WeatherCardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
-          <div>
-            <dt className="text-sm text-muted-foreground">Temperature</dt>
-            <dd className="text-lg font-medium tabular-nums">{weather.tempC.toFixed(1)} °C</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-muted-foreground">Condition</dt>
-            <dd className="text-lg font-medium">{describeWeatherCode(weather.weatherCode)}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-muted-foreground">Wind</dt>
-            <dd className="text-lg font-medium tabular-nums">{weather.windKmh.toFixed(1)} km/h</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-muted-foreground">Rain now</dt>
-            <dd className="text-lg font-medium tabular-nums">{weather.precipMm.toFixed(1)} mm</dd>
-          </div>
-        </dl>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-medium">Heaviest rain next 24 h: {weather.maxRainNext24h.toFixed(1)} mm/h</p>
-          <RainfallBadge level={weather.rainfallLevel} />
+    <Shell>
+      <div className="bg-(image:--conditions-glow) p-6">
+        <Heading />
+        <div className="mt-[18px] mb-1 flex items-center gap-[13px] text-primary">
+          <WeatherIcon code={weather.weatherCode} className="size-[38px]" />
+          <strong className="font-heading text-[38px] leading-none font-bold text-foreground tabular-nums">
+            {Math.round(weather.tempC)}°
+          </strong>
         </div>
-
-        <p className="text-sm text-muted-foreground">Weather is advisory. Log an alert if action is needed.</p>
-      </CardContent>
-    </Card>
+        <p className="text-xs text-muted-foreground">
+          {describeWeatherCode(weather.weatherCode)} · wind {Math.round(weather.windKmh)} km/h
+        </p>
+      </div>
+      <div className="grid grid-cols-2 border-y border-accent-border">
+        <div className="border-r border-accent-border">
+          <Cell
+            icon={<Droplets className="size-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />}
+            label="Rainfall now"
+            value={`${weather.precipMm.toFixed(1)} mm`}
+          />
+        </div>
+        <Cell
+          icon={<CloudSun className="size-5 shrink-0" strokeWidth={1.75} aria-hidden="true" />}
+          label="Next 24h"
+          value={`${weather.maxRainNext24h.toFixed(1)} mm/h max`}
+        />
+      </div>
+      <div className="flex flex-col gap-3 p-[15px]">
+        <RainfallBadge level={weather.rainfallLevel} className="bg-card text-xs" />
+        <p className="flex items-start gap-2 text-[11px] leading-[1.45] text-muted-foreground">
+          <Info className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+          <span>
+            Updated {formatManilaDateTime(forecastTimeToDate(weather.fetchedAt))}. Weather is advisory: log an
+            alert if action is needed.
+          </span>
+        </p>
+      </div>
+    </Shell>
   );
 }
 
 /** Placeholder while {@link WeatherCard} loads. */
 export function WeatherCardSkeleton() {
-  // Matches the loaded card: two rows of readings on phones, one row from `sm`.
-  return <Skeleton className="h-83 rounded-xl sm:h-56" />;
+  return <Skeleton className="h-[330px] rounded-xl" />;
 }

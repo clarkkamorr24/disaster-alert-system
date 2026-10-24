@@ -101,7 +101,7 @@ export function ImportForm() {
             variant="outline"
             onClick={handleCheck}
             disabled={checking || importing}
-            className="h-11 shrink-0 px-5 text-base"
+            className="h-11 shrink-0 px-5 text-[13px]"
           >
             {checking ? "Checking…" : "Check file"}
           </Button>
@@ -134,7 +134,7 @@ export function ImportForm() {
           <Button
             type="submit"
             disabled={shownPreview.validCount === 0 || !consent || importing}
-            className="h-11 self-start px-5 text-base"
+            className="h-11 self-start px-5 text-[13px]"
           >
             {importing ? "Importing…" : `Import ${membersLabel(shownPreview.validCount)}`}
           </Button>
