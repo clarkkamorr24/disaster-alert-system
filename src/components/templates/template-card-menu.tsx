@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { DeleteTemplateButton } from "@/components/templates/delete-template-button";
-import { useDuplicateTemplate } from "@/components/templates/duplicate-template-button";
+import { useDuplicateTemplate } from "@/hooks/use-duplicate-template";
 import {
   DropdownMenu,
   DropdownMenuContent,

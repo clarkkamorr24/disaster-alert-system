@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { AlertStatus, HazardType, Severity } from "@/generated/prisma/enums";
 import { formatRelativeManila } from "@/lib/datetime";
 import { HAZARD_TYPES, SEVERITIES } from "@/lib/domain/hazards";
-import { severityTone } from "@/lib/domain/status-tone";
+import { isCriticalActive, severityTone } from "@/lib/domain/status-tone";
 import { zonesLabel } from "@/lib/domain/zones-label";
 
 
@@ -71,7 +71,7 @@ export function AlertTable({ rows, totalZones, now }: AlertTableProps) {
                 </div>
               </TableCell>
               <TableCell>
-                <StatusPill tone={severityTone(alert.severity)}>{SEVERITIES[alert.severity].label}</StatusPill>
+                <StatusPill tone={severityTone(alert.severity)} pulse={isCriticalActive(alert.severity, alert.status)}>{SEVERITIES[alert.severity].label}</StatusPill>
               </TableCell>
               <TableCell>
                 {zonesLabel(

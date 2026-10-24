@@ -23,6 +23,7 @@ interface NewAlertComposerProps {
   /** One per visit, made on the server; use it as the composer's `key` too. */
   idempotencyKey: string;
   prefix: string;
+  senderId: string;
   blockLinks: boolean;
   /** `null` when the balance couldn't be read. */
   balance: number | null;
@@ -46,7 +47,15 @@ function blockedReason(draft: AlertDraft, balance: number | null): string | null
  * SMS. Review and send logs the alert and sends the SMS after a
  * confirmation; Log alert without SMS only logs it.
  */
-export function NewAlertComposer({ idempotencyKey, prefix, blockLinks, balance, zones, templates }: NewAlertComposerProps) {
+export function NewAlertComposer({
+  idempotencyKey,
+  prefix,
+  senderId,
+  blockLinks,
+  balance,
+  zones,
+  templates,
+}: NewAlertComposerProps) {
   const draft = useAlertDraft({ zones, templates, prefix, blockLinks });
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmChecked, setConfirmChecked] = useState(false);
@@ -197,7 +206,7 @@ export function NewAlertComposer({ idempotencyKey, prefix, blockLinks, balance, 
         ]}
         totalCredits={draft.totalCredits}
         balance={balance}
-        prefix={prefix}
+        senderId={senderId}
         text={draft.text}
         blockedReason={reason}
         pending={pending}

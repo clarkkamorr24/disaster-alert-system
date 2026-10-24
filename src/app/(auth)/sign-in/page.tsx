@@ -21,7 +21,7 @@ async function SignInGate() {
 export default function SignInPage() {
   return (
     <div className="flex w-full max-w-[380px] flex-col gap-6">
-      <div className="flex items-center gap-[11px]">
+      <div className="flex justify-center items-center gap-[11px]">
         <AppLogo variant="brand" />
         <div>
           <p className="font-heading text-[17px] font-bold tracking-[-0.02em]">Mi-isi</p>
@@ -39,9 +39,6 @@ export default function SignInPage() {
         <Suspense fallback={<Skeleton className="h-[226px]" />}>
           <SignInGate />
         </Suspense>
-        <p className="text-xs leading-normal text-muted-foreground">
-          Sessions expire after 30 minutes of inactivity.
-        </p>
       </div>
     </div>
   );

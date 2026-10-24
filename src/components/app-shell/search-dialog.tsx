@@ -19,6 +19,7 @@ import { SeverityDot } from "@/components/alerts/severity-dot";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatManilaDateTime } from "@/lib/datetime";
 import { SEVERITIES } from "@/lib/domain/hazards";
+import { isCriticalActive } from "@/lib/domain/status-tone";
 import { SEARCH_MIN_LENGTH } from "@/lib/validation/search";
 import type { Severity } from "@/generated/prisma/enums";
 import type { SearchResults } from "@/types/search";
@@ -58,6 +59,7 @@ interface Option {
   detail?: string;
   icon: LucideIcon;
   severity?: Severity;
+  pulse?: boolean;
 }
 
 interface Group {
@@ -96,6 +98,7 @@ function toGroups(query: string, results: SearchResults | null): Group[] {
           detail: `${SEVERITIES[alert.severity].label} · ${alert.status === "ACTIVE" ? "Active" : "Resolved"}`,
           icon: TriangleAlert,
           severity: alert.severity,
+          pulse: isCriticalActive(alert.severity, alert.status),
         })),
       },
       {
@@ -260,7 +263,7 @@ function SearchPanel({ onSelect }: { onSelect: () => void }) {
                         <span className="truncate text-sm font-medium">{option.title}</span>
                         {option.detail && (
                           <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-                            {option.severity && <SeverityDot severity={option.severity} />}
+                            {option.severity && <SeverityDot severity={option.severity} pulse={option.pulse} />}
                             {option.detail}
                           </span>
                         )}

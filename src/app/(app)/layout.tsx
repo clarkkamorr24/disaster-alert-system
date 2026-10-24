@@ -10,8 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    // `open` is fixed: the desktop sidebar never collapses; below md it is a drawer.
-    <SidebarProvider open>
+    // From md the sidebar collapses to icons (toggle or Ctrl/⌘ B); below md it is a drawer.
+    <SidebarProvider>
       <AppSidebar
         badges={{
           "/alerts": (
@@ -21,7 +21,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           ),
         }}
         footer={
-          <Suspense fallback={<Skeleton className="h-15 bg-white/10" />}>
+          <Suspense fallback={<Skeleton className="h-15 w-full bg-white/10 group-data-[collapsible=icon]:size-11" />}>
             <AccountMenu />
           </Suspense>
         }

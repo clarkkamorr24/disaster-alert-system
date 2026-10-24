@@ -15,7 +15,7 @@ export interface NavItem {
   icon: LucideIcon;
 }
 
-/** The sidebar's "Workspace" links, in order. */
+/** The sidebar's links, in order. */
 export const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutGrid },
   { label: "Alerts", href: "/alerts", icon: TriangleAlert },
@@ -25,5 +25,5 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "Templates", href: "/templates", icon: FileText },
 ];
 
-/** Shown on its own at the bottom of the sidebar, above the account. */
+/** Not in the sidebar (the account menu links to it); listed as a page in Search. */
 export const SETTINGS_ITEM: NavItem = { label: "Settings", href: "/settings", icon: Settings };

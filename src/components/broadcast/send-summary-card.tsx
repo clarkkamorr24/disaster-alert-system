@@ -11,7 +11,8 @@ interface SendSummaryCardProps {
   totalCredits: number;
   /** `null` when the balance couldn't be read. */
   balance: number | null;
-  prefix: string;
+  /** Shown as the sender in the SMS preview. */
+  senderId: string;
   /** The final SMS with the prefix, or `""`. */
   text: string;
   /** Why Review and send is disabled, or `null` when it can be pressed. */
@@ -37,7 +38,7 @@ export function SendSummaryCard({
   rows,
   totalCredits,
   balance,
-  prefix,
+  senderId,
   text,
   blockedReason,
   pending,
@@ -74,7 +75,7 @@ export function SendSummaryCard({
           </span>
         </Row>
       </div>
-      <SmsPreview text={text} prefix={prefix} />
+      <SmsPreview text={text} senderId={senderId} />
       <div className="flex flex-col gap-2">
         <Button
           type="button"

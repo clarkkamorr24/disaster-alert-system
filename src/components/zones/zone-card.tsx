@@ -5,7 +5,7 @@ import { StatusPill } from "@/components/layout/status-pill";
 import { WeatherIcon } from "@/components/weather/weather-icon";
 import { formatCoordinates } from "@/lib/domain/coordinates";
 import { SEVERITIES } from "@/lib/domain/hazards";
-import { severityTone } from "@/lib/domain/status-tone";
+import { isCriticalActive, severityTone } from "@/lib/domain/status-tone";
 import type { ZoneMapPoint } from "@/types/zone";
 
 /** One zone in the zones grid: status, name, coordinates, members, and rainfall. Links to the zone. */
@@ -19,7 +19,7 @@ export function ZoneCard({ zone }: { zone: ZoneMapPoint }) {
         <span className="grid size-[34px] shrink-0 place-items-center rounded-[9px] bg-status-clear-soft text-status-clear">
           <Leaf className="size-[17px]" strokeWidth={1.75} aria-hidden="true" />
         </span>
-        <StatusPill tone={severityTone(zone.worstSeverity)}>
+        <StatusPill tone={severityTone(zone.worstSeverity)} pulse={isCriticalActive(zone.worstSeverity)}>
           {zone.worstSeverity ? SEVERITIES[zone.worstSeverity].label : "Clear"}
         </StatusPill>
       </div>

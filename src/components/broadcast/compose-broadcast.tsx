@@ -157,6 +157,7 @@ export async function ComposeBroadcast({ searchParams }: ComposeBroadcastProps) 
           key={idempotencyKey}
           idempotencyKey={idempotencyKey}
           prefix={SMS_MESSAGE_PREFIX}
+          senderId={UNISMS_SENDER_ID}
           blockLinks={UNISMS_SENDER_ID === DEFAULT_SENDER_ID}
           balance={balance}
           zones={zones}

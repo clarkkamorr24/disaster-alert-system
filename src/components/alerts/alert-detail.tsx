@@ -15,7 +15,7 @@ import { loadBroadcastSummaries, loadBroadcastZoneNames } from "@/lib/broadcast/
 import { formatManilaDateTime } from "@/lib/datetime";
 import { prisma } from "@/lib/db";
 import { HAZARD_TYPES, SEVERITIES } from "@/lib/domain/hazards";
-import { severityTone } from "@/lib/domain/status-tone";
+import { isCriticalActive, severityTone } from "@/lib/domain/status-tone";
 
 interface AlertDetailProps {
   params: Promise<{ id: string }>;
@@ -74,7 +74,7 @@ export async function AlertDetail({ params }: AlertDetailProps) {
             </p>
             <h1 className="font-heading text-[22px] leading-tight font-bold tracking-[-0.03em]">{alert.title}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-2.5">
-              <StatusPill tone={severityTone(alert.severity)}>{SEVERITIES[alert.severity].label}</StatusPill>
+              <StatusPill tone={severityTone(alert.severity)} pulse={isCriticalActive(alert.severity, alert.status)}>{SEVERITIES[alert.severity].label}</StatusPill>
               <span
                 className={cn(
                   "inline-flex items-center gap-1.5 text-[11px] font-semibold",
