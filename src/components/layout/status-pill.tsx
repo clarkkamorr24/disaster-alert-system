@@ -21,6 +21,15 @@ const DOT_CLASS: Record<StatusTone, string> = {
   neutral: "bg-status-neutral",
 };
 
+const TEXT_CLASS: Record<StatusTone, string> = {
+  critical: "text-status-critical",
+  high: "text-status-high",
+  moderate: "text-status-moderate",
+  low: "text-status-low",
+  clear: "text-status-clear",
+  neutral: "text-status-neutral",
+};
+
 /** A small dot in a status color. Decorative: show the status as text next to it. */
 export function StatusDot({ tone, className }: { tone: StatusTone; className?: string }) {
   return (
@@ -35,6 +44,22 @@ export function StatusPill({ tone, children }: { tone: StatusTone; children: Rea
       className={cn(
         "inline-flex min-h-6 items-center gap-1.5 rounded-full px-[9px] text-[10px] font-bold whitespace-nowrap uppercase",
         PILL_CLASS[tone],
+      )}
+    >
+      <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-current" />
+      {children}
+    </span>
+  );
+}
+
+/** A status label in its status color with a dot before it, such as `● Completed`. */
+export function StatusText({ tone, children, className }: { tone: StatusTone; children: ReactNode; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap",
+        TEXT_CLASS[tone],
+        className,
       )}
     >
       <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-current" />

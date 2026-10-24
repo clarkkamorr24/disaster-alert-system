@@ -11,13 +11,13 @@ import { getEnv } from "@/lib/env";
  * Loads broadcasts newest first, each with its recipient counts and derived
  * status, for the broadcast history and the dashboard.
  *
- * @param skip - How many of the newest broadcasts to pass over.
+ * @param where - Which broadcasts to include, such as those of one alert; `{}` for all.
+ * @param skip - How many of the newest matching broadcasts to pass over.
  * @param take - How many broadcasts to return.
- * @param where - Which broadcasts to include, such as those of one alert; all by default.
- * @returns The broadcasts with `title` (see `broadcastTitle`), `recipientCount`,
- *   `sent`, `notReached` (failed + skipped), and `status`.
+ * @returns The broadcasts with `title` (see `broadcastTitle`), `counts` (recipients
+ *   per status), `recipientCount`, `sent`, `notReached` (failed + skipped), and `status`.
  */
-export async function loadBroadcastSummaries(skip: number, take: number, where: Prisma.BroadcastWhereInput = {}) {
+export async function loadBroadcastSummaries(where: Prisma.BroadcastWhereInput, skip: number, take: number) {
   const broadcasts = await prisma.broadcast.findMany({
     where,
     orderBy: { createdAt: "desc" },
@@ -50,6 +50,7 @@ export async function loadBroadcastSummaries(skip: number, take: number, where: 
     return {
       ...broadcast,
       title: broadcastTitle({ alertTitle: broadcast.alert?.title ?? null, content: broadcast.content, prefix }),
+      counts,
       recipientCount: Object.values(counts).reduce((sum, count) => sum + count, 0),
       sent: counts.SENT,
       notReached: counts.FAILED + counts.SKIPPED,

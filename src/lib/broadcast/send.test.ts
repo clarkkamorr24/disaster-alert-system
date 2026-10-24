@@ -78,6 +78,7 @@ function makeInput(recipients: Recipient[]): SendBroadcastInput {
     content: "Mi-isi FA: Lahar warning",
     alertId: null,
     retryOfId: null,
+    templateId: null,
     recipients,
   };
 }

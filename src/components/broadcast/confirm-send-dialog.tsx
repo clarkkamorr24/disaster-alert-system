@@ -13,15 +13,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
-interface ConfirmAlertSendDialogProps {
+interface ConfirmSendDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** `Hazard · Severity`. */
-  alertLabel: string;
+  /** "Send this alert…" when the SMS is about an alert, otherwise "Send this message…". */
+  subject: "alert" | "message";
+  /** The first row, such as `Alert` / `Hazard · Severity` or `About` / `Announcement`. */
+  about: { label: string; value: string };
   memberCount: number;
   totalCredits: number;
-  /** The chosen zones with their active member counts. */
-  zones: { name: string; count: number }[];
+  /** The zones the members live in, with their counts when known. */
+  zones: { name: string; count?: number }[];
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   pending: boolean;
@@ -42,14 +44,15 @@ function plural(count: number, word: string): string {
 }
 
 /**
- * "Send this alert to N members?": the alert, recipients, credits, and zones,
- * with a checkbox the officer must tick before Send is enabled. It can't be
- * closed while sending.
+ * "Send this alert / message to N members?": what it is about, recipients,
+ * credits, and zones, with a checkbox the officer must tick before Send is
+ * enabled. It can't be closed while sending.
  */
-export function ConfirmAlertSendDialog({
+export function ConfirmSendDialog({
   open,
   onOpenChange,
-  alertLabel,
+  subject,
+  about,
   memberCount,
   totalCredits,
   zones,
@@ -57,16 +60,16 @@ export function ConfirmAlertSendDialog({
   onCheckedChange,
   pending,
   onConfirm,
-}: ConfirmAlertSendDialogProps) {
+}: ConfirmSendDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={(next) => !pending && onOpenChange(next)}>
       <AlertDialogContent
-        overlayClassName="bg-[rgb(11_29_18/.55)]"
+        overlayClassName="bg-scrim/55"
         className="flex max-h-[calc(100dvh-32px)] w-[calc(100%-32px)] flex-col gap-[18px] overflow-y-auto rounded-xl border p-6 shadow-[0_20px_40px_rgb(9_24_15/.25)] ring-0 data-[size=default]:max-w-[480px] data-[size=default]:sm:max-w-[480px]"
       >
         <div>
           <AlertDialogTitle className="font-heading text-lg font-bold tracking-[-0.03em]">
-            Send this alert to {plural(memberCount, "member")}?
+            Send this {subject} to {plural(memberCount, "member")}?
           </AlertDialogTitle>
           <AlertDialogDescription className="mt-1.5 text-sm leading-normal text-balance">
             This sends immediately. There is no second approver, so check the recipients and zones below.
@@ -74,7 +77,7 @@ export function ConfirmAlertSendDialog({
         </div>
 
         <div className="flex flex-col rounded-[9px] border">
-          <Row label="Alert">{alertLabel}</Row>
+          <Row label={about.label}>{about.value}</Row>
           <Row label="Recipients">{plural(memberCount, "active member")}</Row>
           <Row label="SMS to queue">{plural(totalCredits, "credit")}</Row>
           <div className="flex flex-col gap-2 border-t border-row-border px-3.5 py-2.5 text-[13px]">
@@ -85,7 +88,7 @@ export function ConfirmAlertSendDialog({
                   key={zone.name}
                   className="inline-flex min-h-6 items-center rounded-md border border-accent-border bg-accent px-2 text-[11px] font-semibold text-primary"
                 >
-                  {zone.name} · {zone.count}
+                  {zone.count === undefined ? zone.name : `${zone.name} · ${zone.count}`}
                 </li>
               ))}
             </ul>

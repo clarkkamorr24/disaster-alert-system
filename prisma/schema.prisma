@@ -148,11 +148,15 @@ model Broadcast {
   retryOf   Broadcast?  @relation("BroadcastRetry", fields: [retryOfId], references: [id], onDelete: SetNull)
   retries   Broadcast[] @relation("BroadcastRetry")
 
+  templateId String?
+  template   MessageTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
   recipients BroadcastRecipient[]
 
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+  @@index([templateId])
   @@map("broadcast")
 }
 
@@ -181,6 +185,8 @@ model MessageTemplate {
   name       String      @unique
   hazardType HazardType? // null = usable for any hazard
   body       String      @db.Text
+
+  broadcasts Broadcast[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

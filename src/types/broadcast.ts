@@ -17,6 +17,8 @@ export type SendBroadcastInput = {
   alertId: string | null;
   /** The broadcast this one resends to, if any. */
   retryOfId: string | null;
+  /** The template the message started from, if any. */
+  templateId: string | null;
   recipients: Recipient[];
 };
 
@@ -66,6 +68,10 @@ export interface ReportRecipient {
   failReason: string | null;
   /** The member's current zone, or `null` when the member was deleted. */
   zoneName: string | null;
+  /** When the status last changed. */
+  updatedAt: Date;
+  /** How many broadcasts of the resend chain, up to this one, included this phone. */
+  attempts: number;
 }
 
 /** A zone the compose form can send to. */
@@ -102,6 +108,8 @@ export interface ComposeResend {
   memberCount: number;
   /** The zones those members live in, sorted. */
   zoneNames: string[];
+  /** When the original was sent, formatted in Philippine time. */
+  originalSentAt: string;
 }
 
 /**
@@ -112,4 +120,20 @@ export type SendBroadcastActionInput = {
   idempotencyKey: string;
   /** The message as typed, without the prefix. */
   content: string;
+  /** The template the message started from; omitted or `null` when none was chosen. */
+  templateId?: string | null;
 } & ({ alertId: string | null; zoneIds: string[] } | { retryOfId: string });
+
+/** Which broadcasts the history shows: all, those about an alert, announcements, or resends. */
+export type BroadcastKind = "all" | "alert" | "announcement" | "resend";
+
+/** The broadcast history's search, kind, and page, read from the URL. */
+export interface BroadcastListFilters {
+  q: string;
+  kind: BroadcastKind;
+  /** 1-based. */
+  page: number;
+}
+
+/** Which recipients the delivery report lists. */
+export type ReportView = "all" | "unreached" | "pending";

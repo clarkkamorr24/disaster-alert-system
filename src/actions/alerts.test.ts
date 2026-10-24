@@ -10,6 +10,7 @@ const { env, prisma, gateway, store, sendBroadcast, redirect, revalidatePath } =
   prisma: {
     member: { findMany: vi.fn() },
     hazardAlert: { create: vi.fn(), findUniqueOrThrow: vi.fn(), updateMany: vi.fn() },
+    messageTemplate: { findUnique: vi.fn() },
   },
   gateway: { blast: vi.fn(), getBlastMessages: vi.fn(), getCreditBalance: vi.fn() },
   store: { findIdByIdempotencyKey: vi.fn(), create: vi.fn(), addBlastId: vi.fn(), updateRecipients: vi.fn() },
@@ -82,6 +83,14 @@ describe("createAlertAndSend", () => {
     expect(redirect).toHaveBeenCalledWith("/alerts/alert-1");
   });
 
+  it("saves the template the SMS started from", async () => {
+    prisma.messageTemplate.findUnique.mockResolvedValue({ id: "t1" });
+
+    await expect(createAlertAndSend({ ...VALID, templateId: "t1" })).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(sendBroadcast.mock.calls[0][0]).toMatchObject({ templateId: "t1" });
+  });
+
   it("with SMS, sends to the zones' active members linked to the alert, then opens the report", async () => {
     await expect(createAlertAndSend(VALID)).rejects.toThrow("NEXT_REDIRECT");
 
@@ -94,6 +103,7 @@ describe("createAlertAndSend", () => {
       content: "Mi-isi FA: Lumikas na",
       alertId: "alert-1",
       retryOfId: null,
+      templateId: null,
       recipients: [
         { memberId: "m1", phone: "+639171234567", name: "Ana Cruz" },
         { memberId: "m2", phone: "+639181234567", name: "Ben Reyes" },

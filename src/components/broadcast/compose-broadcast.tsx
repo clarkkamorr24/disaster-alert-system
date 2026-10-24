@@ -1,12 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { HazardBadge } from "@/components/alerts/hazard-badge";
-import { SeverityBadge } from "@/components/alerts/severity-badge";
 import { ComposeForm } from "@/components/broadcast/compose-form";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/layout/page-header";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOfficer } from "@/lib/auth/dal";
 import { pickDefaultTemplate, renderComposeMessage } from "@/lib/broadcast/compose";
@@ -41,7 +38,6 @@ function loadAlert(id: string) {
       id: true,
       title: true,
       hazardType: true,
-      severity: true,
       officialLevel: true,
       status: true,
       zones: { orderBy: { name: "asc" }, select: { id: true, name: true } },
@@ -49,7 +45,7 @@ function loadAlert(id: string) {
   });
 }
 
-type ResendSource = ComposeResend & { content: string; createdAt: Date; alertId: string | null };
+type ResendSource = ComposeResend & { content: string; alertId: string | null };
 
 /** The broadcast being resent and its still-active unreached members, or `null` when it doesn't exist. */
 async function loadResend(retryOfId: string): Promise<ResendSource | null> {
@@ -62,7 +58,9 @@ async function loadResend(retryOfId: string): Promise<ResendSource | null> {
   ]);
   if (!original) return null;
   return {
-    ...original,
+    content: original.content,
+    alertId: original.alertId,
+    originalSentAt: formatManilaDateTime(original.createdAt),
     retryOfId,
     memberCount: members.length,
     zoneNames: [...new Set(members.map((member) => member.zone.name))].sort((a, b) => a.localeCompare(b)),
@@ -81,11 +79,11 @@ function param(value: string | string[] | undefined): string | null {
 /** Shown instead of the compose form when no zones exist yet. */
 function AddZoneFirst() {
   return (
-    <div className="flex flex-col items-start gap-3">
-      <p className="text-muted-foreground">
+    <div className="flex flex-col items-start gap-3 rounded-xl border bg-card p-[22px]">
+      <p className="text-sm text-muted-foreground">
         Broadcasts go to the members of chosen zones. Add a zone and its members first.
       </p>
-      <Link href="/zones/new" className={buttonVariants({ className: "h-11 px-4 text-base" })}>
+      <Link href="/zones/new" className={buttonVariants({ className: "h-11 px-4 text-[13px]" })}>
         Add a zone first
       </Link>
     </div>
@@ -93,9 +91,10 @@ function AddZoneFirst() {
 }
 
 /**
- * The compose form, prefilled from the alert in `?alertId=` when there is one.
- * With `?retryOf=`, it resends the original message to that broadcast's
- * still-active unreached members instead. Render inside `<Suspense>`.
+ * The page header and compose form, prefilled from the alert in `?alertId=`
+ * when there is one. With `?retryOf=`, it resends the original message to
+ * that broadcast's still-active unreached members instead. Render inside
+ * `<Suspense>`.
  */
 export async function ComposeBroadcast({ searchParams }: ComposeBroadcastProps) {
   const { alertId: alertParam, retryOf: retryParam } = await searchParams;
@@ -139,70 +138,59 @@ export async function ComposeBroadcast({ searchParams }: ComposeBroadcastProps) 
 
   return (
     <>
-      {resend && (
-        <Card size="sm">
-          <CardContent className="flex flex-col gap-1">
-            <h2 className="text-lg font-semibold">
-              Resending to {resend.memberCount} {resend.memberCount === 1 ? "member who was" : "members who were"} not
-              reached
-            </h2>
-            <Link
-              href={`/broadcasts/${resend.retryOfId}`}
-              className="inline-flex min-h-11 w-fit items-center text-primary hover:underline"
-            >
-              Original broadcast of {formatManilaDateTime(resend.createdAt)}
-            </Link>
-          </CardContent>
-        </Card>
+      <PageHeader
+        eyebrow="Association records"
+        title={resend ? "Resend to not reached" : "New broadcast"}
+        description={
+          resend
+            ? "Send the original message again to the members it didn't reach."
+            : alert
+              ? `An SMS about ${alert.title}. You confirm the recipients before anything is sent.`
+              : "Write an announcement and pick the zones. You confirm the recipients before anything is sent."
+        }
+      />
+      {zones.length === 0 && !resend ? (
+        <AddZoneFirst />
+      ) : (
+        <ComposeForm
+          // A fresh key per visit resets the form, which Activity would otherwise keep across navigations.
+          key={idempotencyKey}
+          idempotencyKey={idempotencyKey}
+          prefix={SMS_MESSAGE_PREFIX}
+          blockLinks={UNISMS_SENDER_ID === DEFAULT_SENDER_ID}
+          balance={balance}
+          zones={zones}
+          templates={templates}
+          alert={composeAlert}
+          resend={
+            resend && {
+              retryOfId: resend.retryOfId,
+              memberCount: resend.memberCount,
+              zoneNames: resend.zoneNames,
+              originalSentAt: resend.originalSentAt,
+            }
+          }
+          initialTemplateId={template?.id ?? null}
+          initialMessage={initialMessage}
+        />
       )}
-      {alert && (
-        <Card size="sm">
-          <CardContent className="flex flex-col gap-2">
-            <p className="text-sm text-muted-foreground">About this alert</p>
-            <Link href={`/alerts/${alert.id}`} className="inline-flex min-h-11 w-fit items-center font-medium hover:underline">
-              {alert.title}
-            </Link>
-            <div className="flex flex-wrap items-center gap-3">
-              <HazardBadge type={alert.hazardType} />
-              <SeverityBadge severity={alert.severity} />
-              {alert.status === "RESOLVED" && <Badge variant="secondary">Resolved</Badge>}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      <Card>
-        <CardContent>
-          {zones.length === 0 && !resend ? (
-            <AddZoneFirst />
-          ) : (
-            <ComposeForm
-              // A fresh key per visit resets the form, which Activity would otherwise keep across navigations.
-              key={idempotencyKey}
-              idempotencyKey={idempotencyKey}
-              prefix={SMS_MESSAGE_PREFIX}
-              blockLinks={UNISMS_SENDER_ID === DEFAULT_SENDER_ID}
-              balance={balance}
-              zones={zones}
-              templates={templates}
-              alert={composeAlert}
-              resend={
-                resend && {
-                  retryOfId: resend.retryOfId,
-                  memberCount: resend.memberCount,
-                  zoneNames: resend.zoneNames,
-                }
-              }
-              initialTemplateId={template?.id ?? null}
-              initialMessage={initialMessage}
-            />
-          )}
-        </CardContent>
-      </Card>
     </>
   );
 }
 
 /** Placeholder while {@link ComposeBroadcast} loads. */
 export function ComposeBroadcastSkeleton() {
-  return <Skeleton className="h-160 rounded-xl" />;
+  return (
+    <>
+      <div className="flex flex-col gap-2 pt-[30px] pb-6">
+        <Skeleton className="h-3 w-36" />
+        <Skeleton className="h-8 w-60" />
+        <Skeleton className="h-4 w-80 max-w-full" />
+      </div>
+      <div className="flex flex-wrap items-start gap-4">
+        <Skeleton className="h-[560px] min-w-0 flex-[3_1_440px] rounded-xl" />
+        <Skeleton className="h-[520px] min-w-0 flex-[2_1_300px] rounded-xl" />
+      </div>
+    </>
+  );
 }

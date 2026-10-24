@@ -14,7 +14,7 @@ const RECENT_BROADCAST_COUNT = 5;
 export async function RecentBroadcasts() {
   await requireOfficer();
   const [broadcasts, totalZones] = await Promise.all([
-    loadBroadcastSummaries(0, RECENT_BROADCAST_COUNT),
+    loadBroadcastSummaries({}, 0, RECENT_BROADCAST_COUNT),
     prisma.farmZone.count(),
   ]);
   const zoneNames = await loadBroadcastZoneNames(broadcasts.map((broadcast) => broadcast.id));

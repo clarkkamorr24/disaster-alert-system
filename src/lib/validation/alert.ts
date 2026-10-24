@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { HazardType, Severity } from "@/generated/prisma/enums";
+import { templateIdSchema } from "@/lib/validation/broadcast";
 
 /** Shown when an alert is submitted without any affected zone. */
 export const NO_ZONES_MESSAGE = "Select at least one affected zone.";
@@ -37,13 +38,15 @@ export type AlertInput = z.infer<typeof alertInputSchema>;
 
 /**
  * The New alert form: the alert fields, a UUID idempotency key (one per form),
- * whether to send the SMS, and the SMS as typed. `content` isn't checked
- * here; the send checks it only when `send` is true.
+ * whether to send the SMS, the SMS as typed, and the template it started
+ * from. `content` isn't checked here; the send checks it only when `send` is
+ * true.
  */
 export const alertSendSchema = alertInputSchema.extend({
   idempotencyKey: z.uuid({ error: "Reload the page and try again." }),
   send: z.boolean(),
   content: z.string(),
+  templateId: templateIdSchema,
 });
 
 /** A parsed New alert form. */

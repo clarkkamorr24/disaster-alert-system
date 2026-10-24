@@ -65,6 +65,7 @@ export function createPrismaBroadcastStore(): BroadcastStore & DeliveryStore {
             creditsPerRecipient: input.creditsPerRecipient,
             alertId: input.alertId,
             retryOfId: input.retryOfId,
+            templateId: input.templateId,
             recipients: {
               createMany: {
                 data: input.recipients.map((recipient) => ({

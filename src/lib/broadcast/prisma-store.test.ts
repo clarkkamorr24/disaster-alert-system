@@ -17,6 +17,7 @@ const INPUT = {
   content: "Mi-isi FA: Lahar warning",
   alertId: "alert-1",
   retryOfId: null,
+  templateId: "t1",
   senderId: "Unisoft",
   creditsPerRecipient: 1,
   recipients: [{ memberId: "m1", phone: "0917 123 4567", name: "Ana Cruz" }],
@@ -34,7 +35,7 @@ describe("createPrismaBroadcastStore", () => {
   beforeEach(() => vi.clearAllMocks());
 
   describe("create", () => {
-    it("creates the broadcast with its recipients, phones normalized", async () => {
+    it("creates the broadcast with its template and recipients, phones normalized", async () => {
       prisma.broadcast.create.mockResolvedValue({ id: "b1" });
 
       await expect(createPrismaBroadcastStore().create(INPUT)).resolves.toEqual({ id: "b1", created: true });
@@ -47,6 +48,7 @@ describe("createPrismaBroadcastStore", () => {
           creditsPerRecipient: 1,
           alertId: "alert-1",
           retryOfId: null,
+          templateId: "t1",
           recipients: { createMany: { data: [{ memberId: "m1", phone: "+639171234567", name: "Ana Cruz" }] } },
         },
         select: { id: true },

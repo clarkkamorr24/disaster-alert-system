@@ -26,8 +26,13 @@ export type Audience =
   | { ok: true; recipients: Recipient[]; alertId: string | null; retryOfId: string | null }
   | { ok: false; error: string };
 
-/** A validated send: its key, the message as typed, and how to load its recipients. */
-export type SendRequest = { idempotencyKey: string; content: string; loadAudience: () => Promise<Audience> };
+/** A validated send: its key, the message as typed, its template, and how to load its recipients. */
+export type SendRequest = {
+  idempotencyKey: string;
+  content: string;
+  templateId: string | null;
+  loadAudience: () => Promise<Audience>;
+};
 
 /**
  * Cleans up a message, adds the SMS prefix, and checks it against the SMS
@@ -110,6 +115,18 @@ export async function resendAudience({ retryOfId }: ResendInput): Promise<Audien
 }
 
 /**
+ * Looks up the template a message started from.
+ *
+ * @param templateId - The chosen template, or `null`.
+ * @returns The id when the template still exists, else `null` (deleted while the form was open).
+ */
+async function existingTemplateId(templateId: string | null): Promise<string | null> {
+  if (!templateId) return null;
+  const template = await prisma.messageTemplate.findUnique({ where: { id: templateId }, select: { id: true } });
+  return template?.id ?? null;
+}
+
+/**
  * Checks a send, then creates and sends the broadcast. A key that was
  * already used returns its broadcast without checking or sending anything.
  *
@@ -128,7 +145,11 @@ export async function checkAndSend(request: SendRequest): Promise<ActionResult<{
   const content = prepareContent(request.content);
   if (!content.ok) return { success: false, error: content.error };
 
-  const [audience, balance] = await Promise.all([request.loadAudience(), gateway.getCreditBalance()]);
+  const [audience, balance, templateId] = await Promise.all([
+    request.loadAudience(),
+    gateway.getCreditBalance(),
+    existingTemplateId(request.templateId),
+  ]);
   if (!audience.ok) return { success: false, error: audience.error };
   const { recipients, alertId, retryOfId } = audience;
   if (balance !== null && content.credits * recipients.length > balance) {
@@ -136,7 +157,7 @@ export async function checkAndSend(request: SendRequest): Promise<ActionResult<{
   }
 
   const { broadcastId } = await sendBroadcast(
-    { idempotencyKey, content: content.content, alertId, retryOfId, recipients },
+    { idempotencyKey, content: content.content, alertId, retryOfId, templateId, recipients },
     { gateway, store, senderId: getEnv().UNISMS_SENDER_ID },
   );
   return { success: true, data: { broadcastId } };

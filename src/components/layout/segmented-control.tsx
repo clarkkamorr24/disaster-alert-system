@@ -2,6 +2,13 @@
 
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
+import Link from "next/link";
+import { cn } from "cn";
+
+const TRACK_CLASS = "inline-flex flex-wrap gap-0.5 self-start rounded-[9px] bg-[#eef2ef] p-[3px] dark:bg-muted";
+const SEGMENT_CLASS =
+  "inline-flex min-h-11 items-center rounded-[7px] px-3.5 text-xs font-semibold text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/25 sm:min-h-8";
+const CHOSEN_CLASS = "bg-card text-foreground shadow-[0_1px_2px_rgb(23_35_28/.1)]";
 
 /** One choice of a {@link SegmentedControl}. */
 export interface SegmentedOption<T extends string> {
@@ -41,17 +48,52 @@ export function SegmentedControl<T extends string>({
       value={value}
       onValueChange={(next) => onChange(next as T)}
       disabled={disabled}
-      className="inline-flex flex-wrap gap-0.5 self-start rounded-[9px] bg-[#eef2ef] p-[3px] aria-invalid:ring-2 aria-invalid:ring-destructive/40 dark:bg-muted"
+      className={cn(TRACK_CLASS, "aria-invalid:ring-2 aria-invalid:ring-destructive/40")}
     >
       {options.map((option) => (
         <Radio.Root
           key={option.value}
           value={option.value}
-          className="min-h-11 rounded-[7px] px-3.5 text-xs font-semibold text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/25 data-disabled:cursor-not-allowed data-disabled:opacity-60 data-checked:bg-card data-checked:text-foreground data-checked:shadow-[0_1px_2px_rgb(23_35_28/.1)] sm:min-h-8"
+          className={cn(
+            SEGMENT_CLASS,
+            "data-disabled:cursor-not-allowed data-disabled:opacity-60 data-checked:bg-card data-checked:text-foreground data-checked:shadow-[0_1px_2px_rgb(23_35_28/.1)]",
+          )}
         >
           {option.label}
         </Radio.Root>
       ))}
     </RadioGroup>
+  );
+}
+
+/** One link of {@link SegmentedLinks}. */
+export interface SegmentedLink {
+  href: string;
+  label: string;
+  /** Shown after the label, such as how many rows the view has. */
+  count?: number;
+  current: boolean;
+}
+
+/**
+ * The segmented look as navigation links, for views kept in the URL. The
+ * current one is white and has `aria-current="page"`.
+ */
+export function SegmentedLinks({ label, links }: { label: string; links: SegmentedLink[] }) {
+  return (
+    <nav aria-label={label} className={TRACK_CLASS}>
+      {links.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          scroll={false}
+          aria-current={link.current ? "page" : undefined}
+          className={cn(SEGMENT_CLASS, "gap-1.5", link.current && CHOSEN_CLASS)}
+        >
+          {link.label}
+          {link.count !== undefined && <span className="tabular-nums opacity-70">{link.count.toLocaleString("en-US")}</span>}
+        </Link>
+      ))}
+    </nav>
   );
 }

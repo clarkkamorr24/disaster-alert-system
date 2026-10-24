@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Send } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -17,14 +17,14 @@ export default function BroadcastsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="w-full">
       <PageHeader
         eyebrow="Association records"
         title="Broadcasts"
         description="Compose SMS warnings and review delivery to every member."
         action={
           <Link href="/broadcasts/new" className={buttonVariants({ className: PAGE_ACTION_CLASS })}>
-            <Plus data-icon="inline-start" />
+            <Send data-icon="inline-start" />
             New broadcast
           </Link>
         }

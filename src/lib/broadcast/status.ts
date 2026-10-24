@@ -1,4 +1,5 @@
 import { RecipientStatus } from "@/generated/prisma/enums";
+import type { StatusTone } from "@/lib/domain/status-tone";
 import type { BroadcastStatus } from "@/types/broadcast";
 
 /** What each derived broadcast status is called in the UI. */
@@ -8,6 +9,47 @@ export const BROADCAST_STATUS_LABELS: Record<BroadcastStatus, string> = {
   PARTIAL: "Partially delivered",
   FAILED: "Failed",
 };
+
+/** The color each derived broadcast status is shown in, next to its label. */
+export const BROADCAST_STATUS_TONES: Record<BroadcastStatus, StatusTone> = {
+  SENDING: "moderate",
+  COMPLETED: "clear",
+  PARTIAL: "moderate",
+  FAILED: "critical",
+};
+
+/** How each recipient status is shown: its label and the color next to it. */
+export const RECIPIENT_STATUS_DISPLAY: Record<RecipientStatus, { label: string; tone: StatusTone }> = {
+  PENDING: { label: "Pending", tone: "neutral" },
+  RETRYING: { label: "Retrying", tone: "moderate" },
+  SENT: { label: "Sent", tone: "clear" },
+  FAILED: { label: "Failed", tone: "critical" },
+  SKIPPED: { label: "Skipped", tone: "high" },
+};
+
+/** Recipients grouped the way delivery bars and tiles show them. */
+export interface DeliveryBreakdown {
+  sent: number;
+  /** Pending + retrying. */
+  pending: number;
+  /** Failed + skipped. */
+  notReached: number;
+}
+
+/**
+ * Groups recipient counts into sent, still pending (pending + retrying), and
+ * not reached (failed + skipped).
+ *
+ * @param counts - The number of recipients in each status.
+ * @returns The three groups.
+ */
+export function deliveryBreakdown(counts: Record<RecipientStatus, number>): DeliveryBreakdown {
+  return {
+    sent: counts.SENT,
+    pending: counts.PENDING + counts.RETRYING,
+    notReached: counts.FAILED + counts.SKIPPED,
+  };
+}
 
 /**
  * Creates a count of zero for every recipient status, to add up recipients into.

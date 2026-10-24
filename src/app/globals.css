@@ -80,6 +80,11 @@
   --color-marker-moderate: var(--marker-moderate);
   --color-marker-low: var(--marker-low);
   --color-marker-clear: var(--marker-clear);
+  --color-delivery-sent: var(--delivery-sent);
+  --color-delivery-pending: var(--delivery-pending);
+  --color-delivery-failed: var(--delivery-failed);
+  --color-delivery-track: var(--delivery-track);
+  --color-live: var(--live);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -174,6 +179,13 @@
   --marker-moderate: #d69222;
   --marker-low: #6f8074;
   --marker-clear: #6f8074;
+  /* Delivery bars: sent, pending + retrying, not reached, on a light track. */
+  --delivery-sent: #3a935c;
+  --delivery-pending: #d69222;
+  --delivery-failed: #df5a4f;
+  --delivery-track: #edf0ee;
+  /* The report's "Live · updating" dot. */
+  --live: #2f8a50;
 }
 
 .dark {
@@ -248,6 +260,11 @@
   --marker-moderate: #d69222;
   --marker-low: #6f8074;
   --marker-clear: #6f8074;
+  --delivery-sent: #3a935c;
+  --delivery-pending: #d69222;
+  --delivery-failed: #df5a4f;
+  --delivery-track: #253029;
+  --live: #6cc28f;
 }
 
 @layer base {

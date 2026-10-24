@@ -1,25 +1,28 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BroadcastSummary } from "@/components/broadcast/broadcast-summary";
-import { NotReachedPanel } from "@/components/broadcast/not-reached-panel";
-import { RECIPIENT_STATUS_DISPLAY } from "@/components/broadcast/recipient-status-badge";
+import { DeliveryBar } from "@/components/broadcast/delivery-bar";
 import { RecipientTable } from "@/components/broadcast/recipient-table";
-import { StatusFilter } from "@/components/broadcast/status-filter";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RecipientStatus } from "@/generated/prisma/enums";
+import { StatusTiles } from "@/components/broadcast/status-tiles";
+import { SegmentedLinks } from "@/components/layout/segmented-control";
 import { requireOfficer } from "@/lib/auth/dal";
-import { deriveBroadcastStatus, emptyStatusCounts } from "@/lib/broadcast/status";
+import { loadAttempts } from "@/lib/broadcast/attempts";
+import { deliveryBreakdown, deriveBroadcastStatus, emptyStatusCounts } from "@/lib/broadcast/status";
+import { broadcastTitle } from "@/lib/broadcast/title";
 import { prisma } from "@/lib/db";
-import type { ReportRecipient } from "@/types/broadcast";
+import { zonesLabel } from "@/lib/domain/zones-label";
+import { getEnv } from "@/lib/env";
+import type { ReportRecipient, ReportView } from "@/types/broadcast";
 
 interface BroadcastReportProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-function parseStatus(value: string | string[] | undefined): RecipientStatus | null {
-  return Object.values(RecipientStatus).find((status) => status === value) ?? null;
+const VIEW_LABELS: Record<ReportView, string> = { all: "All", unreached: "Not reached", pending: "Pending" };
+
+function parseView(value: string | string[] | undefined): ReportView {
+  return value === "unreached" || value === "pending" ? value : "all";
 }
 
 /** Not reached sorted by zone (deleted members last), then name. */
@@ -39,7 +42,8 @@ function loadReport(id: string) {
       select: {
         content: true,
         createdAt: true,
-        alert: { select: { id: true, title: true, hazardType: true } },
+        creditsPerRecipient: true,
+        alert: { select: { id: true, title: true } },
         retryOf: { select: { id: true, createdAt: true } },
       },
     }),
@@ -52,79 +56,97 @@ function loadReport(id: string) {
         phone: true,
         status: true,
         failReason: true,
+        updatedAt: true,
         member: { select: { zone: { select: { name: true } } } },
       },
     }),
+    loadAttempts(id),
+    prisma.farmZone.count(),
   ]);
 }
 
+/** Splits the recipients into the three views; Not reached is sorted by zone then name. */
+function viewRecipients(recipients: ReportRecipient[]): Record<ReportView, ReportRecipient[]> {
+  return {
+    all: recipients,
+    unreached: recipients.filter((r) => r.status === "FAILED" || r.status === "SKIPPED").sort(byZoneThenName),
+    pending: recipients.filter((r) => r.status === "PENDING" || r.status === "RETRYING"),
+  };
+}
+
 /**
- * A broadcast's delivery report: derived status, message, count per status,
- * the Not reached list, and every recipient filtered by `?status=`. Render
- * inside `<Suspense>`.
+ * A broadcast's delivery report in one card: header with the live indicator
+ * and actions, progress bar, status tiles, the message, and the recipients
+ * of the `?view=` tab. Render inside `<Suspense>`.
  */
 export async function BroadcastReport({ params, searchParams }: BroadcastReportProps) {
-  const [{ id }, { status: statusParam }] = await Promise.all([params, searchParams]);
+  const [{ id }, { view: viewParam }] = await Promise.all([params, searchParams]);
   await requireOfficer();
 
-  const [broadcast, rows] = await loadReport(id);
+  const [broadcast, rows, attempts, totalZones] = await loadReport(id);
   if (!broadcast) notFound();
 
   const recipients: ReportRecipient[] = rows.map(({ member, ...row }) => ({
     ...row,
     zoneName: member?.zone.name ?? null,
+    attempts: attempts.get(row.phone) ?? 1,
   }));
   const counts = emptyStatusCounts();
   for (const recipient of recipients) counts[recipient.status] += 1;
-  const status = deriveBroadcastStatus(counts);
-  const notReached = recipients
-    .filter((recipient) => recipient.status === "FAILED" || recipient.status === "SKIPPED")
-    .sort(byZoneThenName);
-
-  const filter = parseStatus(statusParam);
-  const shown = filter ? recipients.filter((recipient) => recipient.status === filter) : recipients;
+  const delivery = deliveryBreakdown(counts);
+  const views = viewRecipients(recipients);
+  const view = parseView(viewParam);
+  const zoneNames = [...new Set(recipients.flatMap((r) => (r.zoneName ? [r.zoneName] : [])))];
+  const credits = broadcast.creditsPerRecipient;
 
   return (
-    <>
-      <BroadcastSummary
-        id={id}
-        status={status}
-        content={broadcast.content}
-        createdAt={broadcast.createdAt}
-        alert={broadcast.alert}
-        retryOf={broadcast.retryOf}
-        notReachedCount={notReached.length}
-      />
-
-      <NotReachedPanel recipients={notReached} sending={status === "SENDING"} />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <h2 className="text-lg font-semibold">Delivery</h2>
-          </CardTitle>
-          <CardDescription>
-            {recipients.length} {recipients.length === 1 ? "recipient" : "recipients"}. Statuses update as UniSMS
-            reports delivery; press Refresh status if they don&rsquo;t.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <StatusFilter broadcastId={id} counts={counts} current={filter} />
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {filter ? (
-              <>
-                Showing {RECIPIENT_STATUS_DISPLAY[filter].label.toLowerCase()} ({shown.length}) ·{" "}
-                <Link href={`/broadcasts/${id}`} scroll={false} className="text-primary hover:underline">
-                  Show all
-                </Link>
-              </>
-            ) : (
-              "Showing all recipients. Choose a status above to filter."
-            )}
+    <article className="flex flex-col overflow-hidden rounded-xl border bg-card">
+      <div className="flex flex-col gap-5 p-5">
+        <BroadcastSummary
+          id={id}
+          title={broadcastTitle({
+            alertTitle: broadcast.alert?.title ?? null,
+            content: broadcast.content,
+            prefix: getEnv().SMS_MESSAGE_PREFIX,
+          })}
+          status={deriveBroadcastStatus(counts)}
+          createdAt={broadcast.createdAt}
+          zones={zonesLabel(zoneNames, totalZones)}
+          recipientCount={recipients.length}
+          alert={broadcast.alert}
+          retryOf={broadcast.retryOf}
+          notReachedCount={delivery.notReached}
+          live={delivery.pending > 0}
+        />
+        <DeliveryBar {...delivery} className="h-1.5 w-full" />
+        <StatusTiles counts={counts} />
+        <section aria-labelledby="broadcast-message-heading" className="flex flex-col gap-2">
+          <h2
+            id="broadcast-message-heading"
+            className="text-[11px] font-bold tracking-[.06em] text-muted-foreground uppercase"
+          >
+            Message
+          </h2>
+          <p className="max-w-xl rounded-xl rounded-bl-sm bg-muted px-3.5 py-3 text-[13px] leading-normal break-words whitespace-pre-wrap">
+            {broadcast.content}
           </p>
-          {shown.length > 0 && <RecipientTable recipients={shown} />}
-        </CardContent>
-      </Card>
-    </>
+          <p className="text-xs text-muted-foreground">
+            {credits} {credits === 1 ? "credit" : "credits"} per member
+          </p>
+        </section>
+        <SegmentedLinks
+          label="Recipients"
+          links={(Object.keys(VIEW_LABELS) as ReportView[]).map((key) => ({
+            href: key === "all" ? `/broadcasts/${id}` : `/broadcasts/${id}?view=${key}`,
+            label: VIEW_LABELS[key],
+            count: views[key].length,
+            current: key === view,
+          }))}
+        />
+      </div>
+      <div className="border-t">
+        <RecipientTable recipients={views[view]} now={new Date()} />
+      </div>
+    </article>
   );
 }
