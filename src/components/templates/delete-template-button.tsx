@@ -22,13 +22,19 @@ import { isRedirectError } from "@/lib/redirect-error";
 interface DeleteTemplateButtonProps {
   id: string;
   name: string;
-  /** Show only the trash icon, for list rows. */
-  compact?: boolean;
+  /** Controls the confirmation from outside, such as a card menu. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Leaves out the button, for when something else opens the confirmation. */
+  hideTrigger?: boolean;
 }
 
-export function DeleteTemplateButton({ id, name, compact = false }: DeleteTemplateButtonProps) {
-  const [open, setOpen] = useState(false);
+/** Deletes a template after a confirmation, then goes to `/templates`. */
+export function DeleteTemplateButton({ id, name, open, onOpenChange, hideTrigger }: DeleteTemplateButtonProps) {
+  const [innerOpen, setInnerOpen] = useState(false);
   const [pending, startTransition] = useTransition();
+  const isOpen = open ?? innerOpen;
+  const setOpen = onOpenChange ?? setInnerOpen;
 
   function handleDelete() {
     startTransition(async () => {
@@ -47,15 +53,9 @@ export function DeleteTemplateButton({ id, name, compact = false }: DeleteTempla
   }
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      {compact ? (
-        <AlertDialogTrigger
-          render={<Button variant="outline" className="size-11" aria-label={`Delete template "${name}"`} />}
-        >
-          <Trash2 aria-hidden="true" />
-        </AlertDialogTrigger>
-      ) : (
-        <AlertDialogTrigger render={<Button variant="destructive" className="h-11 px-4 text-base" />}>
+    <AlertDialog open={isOpen} onOpenChange={setOpen}>
+      {!hideTrigger && (
+        <AlertDialogTrigger render={<Button variant="destructive" className="h-11 px-4 text-[13px]" />}>
           <Trash2 data-icon="inline-start" />
           Delete template
         </AlertDialogTrigger>

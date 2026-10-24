@@ -2,12 +2,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Prisma } from "@/generated/prisma/client";
 
-import { createTemplate, deleteTemplate, updateTemplate } from "./templates";
+import { createTemplate, deleteTemplate, duplicateTemplate, updateTemplate } from "./templates";
 
 const { env, prisma, redirect, revalidatePath } = vi.hoisted(() => ({
   env: { SMS_MESSAGE_PREFIX: "Mi-isi FA:" },
   prisma: {
-    messageTemplate: { create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    messageTemplate: {
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+    },
   },
   redirect: vi.fn(() => {
     throw new Error("NEXT_REDIRECT");
@@ -155,5 +161,77 @@ describe("deleteTemplate", () => {
       error: "Couldn't delete the template. Try again.",
     });
     expect(redirect).not.toHaveBeenCalled();
+  });
+});
+
+describe("duplicateTemplate", () => {
+  const original = { name: "All clear", hazardType: null, body: "Wala nang banta ng {hazard}." };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prisma.messageTemplate.findUnique.mockResolvedValue(original);
+    prisma.messageTemplate.findMany.mockResolvedValue([{ name: "All clear" }, { name: "All clear (copy)" }]);
+  });
+
+  it("copies the hazard and body under the next free name and stays on the list", async () => {
+    prisma.messageTemplate.create.mockResolvedValue({ id: "copy-1" });
+
+    const result = await duplicateTemplate("template-1");
+
+    expect(prisma.messageTemplate.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "template-1" } }),
+    );
+    expect(prisma.messageTemplate.create).toHaveBeenCalledWith({
+      data: { name: "All clear (copy 2)", hazardType: null, body: "Wala nang banta ng {hazard}." },
+      select: { id: true },
+    });
+    expect(result).toEqual({ success: true, data: { id: "copy-1" } });
+    expect(revalidatePath).toHaveBeenCalledWith("/templates", "layout");
+    expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("returns an error for a template that no longer exists", async () => {
+    prisma.messageTemplate.findUnique.mockResolvedValue(null);
+
+    const result = await duplicateTemplate("missing");
+
+    expect(result).toEqual({ success: false, error: "This template no longer exists." });
+    expect(prisma.messageTemplate.create).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("retries once with fresh names when the name is taken meanwhile", async () => {
+    prisma.messageTemplate.findMany
+      .mockResolvedValueOnce([{ name: "All clear" }])
+      .mockResolvedValueOnce([{ name: "All clear" }, { name: "All clear (copy)" }]);
+    prisma.messageTemplate.create.mockRejectedValueOnce(duplicateName).mockResolvedValueOnce({ id: "copy-2" });
+
+    const result = await duplicateTemplate("template-1");
+
+    expect(prisma.messageTemplate.create).toHaveBeenCalledTimes(2);
+    expect(prisma.messageTemplate.create).toHaveBeenLastCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ name: "All clear (copy 2)" }) }),
+    );
+    expect(result).toEqual({ success: true, data: { id: "copy-2" } });
+  });
+
+  it("gives up after one retry with the duplicate name message", async () => {
+    prisma.messageTemplate.create.mockRejectedValue(duplicateName);
+
+    const result = await duplicateTemplate("template-1");
+
+    expect(prisma.messageTemplate.create).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ success: false, error: "A template with this name already exists." });
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("returns a generic error for other failures", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    prisma.messageTemplate.create.mockRejectedValue(new Error("connection lost"));
+
+    const result = await duplicateTemplate("template-1");
+
+    expect(prisma.messageTemplate.create).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ success: false, error: "Couldn't duplicate the template. Try again." });
   });
 });

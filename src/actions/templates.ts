@@ -8,14 +8,16 @@ import { requireOfficer } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
 import { isUniqueViolation } from "@/lib/prisma-errors";
+import { copyName } from "@/lib/templates/copy-name";
 import { makeTemplateSchema, type TemplateInput } from "@/lib/validation/template";
 import type { ActionResult } from "@/types/action-result";
 
 const INVALID_FIELDS = "Check the highlighted fields.";
+const NAME_TAKEN = "A template with this name already exists.";
 const DUPLICATE_NAME: ActionResult = {
   success: false,
   error: INVALID_FIELDS,
-  fieldErrors: { name: ["A template with this name already exists."] },
+  fieldErrors: { name: [NAME_TAKEN] },
 };
 
 type ParsedTemplate = { success: true; data: TemplateInput } | { success: false; result: ActionResult };
@@ -85,6 +87,51 @@ export async function updateTemplate(
 
   revalidatePath("/templates", "layout");
   return { success: true, data: undefined };
+}
+
+/** Creates a copy of the template named by {@link copyName}. Throws a unique violation when the name was taken meanwhile. */
+async function createCopy(id: string): Promise<string | null> {
+  const [template, names] = await Promise.all([
+    prisma.messageTemplate.findUnique({ where: { id }, select: { name: true, hazardType: true, body: true } }),
+    prisma.messageTemplate.findMany({ select: { name: true } }),
+  ]);
+  if (!template) return null;
+
+  const copy = await prisma.messageTemplate.create({
+    data: {
+      ...template,
+      name: copyName(template.name, names.map((row) => row.name)),
+    },
+    select: { id: true },
+  });
+  return copy.id;
+}
+
+/**
+ * Copies a template's hazard and body under the next free `<name> (copy)` name.
+ * The officer stays on the list, so this returns the new id instead of redirecting.
+ */
+export async function duplicateTemplate(id: string): Promise<ActionResult<{ id: string }>> {
+  await requireOfficer();
+
+  try {
+    let copyId: string | null;
+    try {
+      copyId = await createCopy(id);
+    } catch (error) {
+      // Another copy took the name between reading the names and creating; try once with a fresh list.
+      if (!isUniqueViolation(error, "name")) throw error;
+      copyId = await createCopy(id);
+    }
+    if (!copyId) return { success: false, error: "This template no longer exists." };
+
+    revalidatePath("/templates", "layout");
+    return { success: true, data: { id: copyId } };
+  } catch (error) {
+    if (isUniqueViolation(error, "name")) return { success: false, error: NAME_TAKEN };
+    console.error("duplicateTemplate failed", error);
+    return { success: false, error: "Couldn't duplicate the template. Try again." };
+  }
 }
 
 /** Deletes a template, then redirects to `/templates`. Past broadcasts keep their own copy of the text. */

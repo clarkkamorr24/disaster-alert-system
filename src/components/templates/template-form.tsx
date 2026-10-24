@@ -2,37 +2,19 @@
 
 import { startTransition, useActionState, useRef, useState, type FormEvent } from "react";
 import { toast } from "sonner";
+import { cn } from "cn";
 
 import { createTemplate, updateTemplate } from "@/actions/templates";
+import { ANY_HAZARD, HazardSelect, PlaceholderChips, type HazardChoice } from "@/components/templates/template-fields";
 import { TemplatePreview } from "@/components/templates/template-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { HazardType } from "@/generated/prisma/enums";
-import { HAZARD_TYPES } from "@/lib/domain/hazards";
 import { estimateCredits, SMS_MAX_CHARS, withPrefix } from "@/lib/domain/sms-text";
 import { isRedirectError } from "@/lib/redirect-error";
-import { TEMPLATE_PLACEHOLDERS } from "@/lib/templates/render";
-import { cn } from "@/lib/utils";
 import type { ActionResult } from "@/types/action-result";
 import type { TemplateFormValues } from "@/types/template";
-
-/** The select value for "Any hazard"; submitted as a blank hazard type. */
-const ANY_HAZARD = "ANY";
-type HazardChoice = HazardType | typeof ANY_HAZARD;
-
-const hazardItems: { value: HazardChoice; label: string }[] = [
-  { value: ANY_HAZARD, label: "Any hazard" },
-  ...Object.values(HazardType).map((type) => ({ value: type, label: HAZARD_TYPES[type].label })),
-];
 
 interface TemplateFormProps {
   /** The SMS prefix every message starts with, such as `Mi-isi FA:`. */
@@ -60,6 +42,7 @@ function errorProps(id: string, message: string | undefined) {
   return message ? { "aria-invalid": true, "aria-describedby": id } : {};
 }
 
+/** The template form card with the sticky sample preview beside it (stacked on narrow screens). */
 export function TemplateForm({ prefix, template }: TemplateFormProps) {
   async function submit(prev: ActionResult | null, formData: FormData): Promise<ActionResult> {
     let result: ActionResult;
@@ -114,107 +97,81 @@ export function TemplateForm({ prefix, template }: TemplateFormProps) {
   }
 
   return (
-    <form method="post" onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="template-name">Name</Label>
-        <Input
-          id="template-name"
-          name="name"
-          required
-          maxLength={60}
-          autoComplete="off"
-          placeholder="Lahar warning"
-          defaultValue={template?.name}
-          {...errorProps("template-name-error", error("name"))}
-          className="h-11"
-        />
-        <FieldError id="template-name-error" message={error("name")} />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="template-hazard">Hazard type</Label>
-        <Select
-          items={hazardItems}
-          value={hazard}
-          onValueChange={(value) => setHazard((value as HazardChoice | null) ?? ANY_HAZARD)}
-        >
-          <SelectTrigger
-            id="template-hazard"
-            {...errorProps("template-hazard-error", error("hazardType"))}
-            className="w-full text-base data-[size=default]:h-11"
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {hazardItems.map((item) => {
-              const config = item.value === ANY_HAZARD ? null : HAZARD_TYPES[item.value];
-              return (
-                <SelectItem key={item.value} value={item.value} className="min-h-11 text-base">
-                  {config && (
-                    <config.icon
-                      className="size-4"
-                      color={config.color}
-                      strokeWidth={2.5}
-                      aria-hidden="true"
-                    />
-                  )}
-                  {item.label}
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-        <FieldError id="template-hazard-error" message={error("hazardType")} />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="template-body">Message</Label>
-        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Insert a placeholder">
-          <span className="text-sm text-muted-foreground">Insert:</span>
-          {TEMPLATE_PLACEHOLDERS.map((name) => (
-            <Button
-              key={name}
-              type="button"
-              variant="outline"
-              onClick={() => insertPlaceholder(name)}
-              className="h-11 px-3 font-mono text-sm"
-            >
-              {`{${name}}`}
-            </Button>
-          ))}
+    <div className="flex flex-wrap items-start gap-4">
+      <form
+        method="post"
+        onSubmit={handleSubmit}
+        noValidate
+        className="flex min-w-0 flex-[3_1_440px] flex-col gap-6 rounded-xl border bg-card p-[22px]"
+      >
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="template-name" className="text-sm font-semibold">
+            Name
+          </Label>
+          <Input
+            id="template-name"
+            name="name"
+            required
+            maxLength={60}
+            autoComplete="off"
+            placeholder="Lahar warning"
+            defaultValue={template?.name}
+            {...errorProps("template-name-error", error("name"))}
+            className="h-[42px] text-sm"
+          />
+          <FieldError id="template-name-error" message={error("name")} />
         </div>
-        <Textarea
-          ref={bodyRef}
-          id="template-body"
-          name="body"
-          required
-          rows={5}
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-          aria-invalid={error("body") ? true : undefined}
-          aria-describedby={
-            error("body") ? "template-body-count template-body-error" : "template-body-count"
-          }
-        />
-        <p
-          id="template-body-count"
-          className={cn("text-sm tabular-nums", tooLong ? "text-destructive" : "text-muted-foreground")}
-        >
-          {message.length} / {SMS_MAX_CHARS} characters · {credits}{" "}
-          {credits === 1 ? "credit" : "credits"} per member
-        </p>
-        <FieldError id="template-body-error" message={error("body")} />
-        <p className="text-sm text-muted-foreground">
-          The count includes the &ldquo;{prefix}&rdquo; prefix and counts placeholders as written.
-          The final count is shown when you send.
-        </p>
-      </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="template-hazard" className="text-sm font-semibold">
+            Hazard type
+          </Label>
+          <HazardSelect
+            id="template-hazard"
+            value={hazard}
+            onChange={setHazard}
+            errorProps={errorProps("template-hazard-error", error("hazardType"))}
+          />
+          <FieldError id="template-hazard-error" message={error("hazardType")} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="template-body" className="text-sm font-semibold">
+            Message
+          </Label>
+          <PlaceholderChips onInsert={insertPlaceholder} />
+          <Textarea
+            ref={bodyRef}
+            id="template-body"
+            name="body"
+            required
+            rows={6}
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+            aria-invalid={error("body") ? true : undefined}
+            aria-describedby={error("body") ? "template-body-count template-body-error" : "template-body-count"}
+            className="text-sm leading-normal"
+          />
+          <p
+            id="template-body-count"
+            className={cn("text-xs tabular-nums", tooLong ? "text-destructive" : "text-muted-foreground")}
+          >
+            {message.length} / {SMS_MAX_CHARS} characters · {credits} {credits === 1 ? "credit" : "credits"} per
+            member
+          </p>
+          <FieldError id="template-body-error" message={error("body")} />
+          <p className="text-xs text-muted-foreground">
+            The count includes the &ldquo;{prefix}&rdquo; prefix and counts placeholders as written. The final count
+            is shown when you send.
+          </p>
+        </div>
+
+        <Button type="submit" disabled={pending} className="h-11 self-start px-5 text-[13px]">
+          {pending ? "Saving…" : template ? "Save template" : "Add template"}
+        </Button>
+      </form>
 
       <TemplatePreview body={body} prefix={prefix} />
-
-      <Button type="submit" disabled={pending} className="h-11 self-start px-5 text-base">
-        {pending ? "Saving…" : template ? "Save template" : "Add template"}
-      </Button>
-    </form>
+    </div>
   );
 }

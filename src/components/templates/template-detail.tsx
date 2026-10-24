@@ -1,54 +1,53 @@
 import { notFound } from "next/navigation";
 
+import { DetailCard } from "@/components/layout/detail-card";
+import { PageHeader } from "@/components/layout/page-header";
 import { DeleteTemplateButton } from "@/components/templates/delete-template-button";
+import { NewTemplateFormSkeleton } from "@/components/templates/new-template-form";
 import { TemplateForm } from "@/components/templates/template-form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOfficer } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { getEnv } from "@/lib/env";
+import { usageLabel } from "@/lib/templates/usage";
 
 interface TemplateDetailProps {
   params: Promise<{ id: string }>;
 }
 
-/** The edit form and delete action for one template. Render inside `<Suspense>`. */
+/** The header with usage, the edit form, and the delete action for one template. Render inside `<Suspense>`. */
 export async function TemplateDetail({ params }: TemplateDetailProps) {
   const { id } = await params;
   await requireOfficer();
 
   const template = await prisma.messageTemplate.findUnique({
     where: { id },
-    select: { id: true, name: true, hazardType: true, body: true },
+    select: { id: true, name: true, hazardType: true, body: true, _count: { select: { broadcasts: true } } },
   });
   if (!template) notFound();
 
+  const { _count, ...values } = template;
+
   return (
     <>
-      <h1 className="text-2xl font-semibold">{template.name}</h1>
+      <PageHeader eyebrow="Association records" title={template.name} description={usageLabel(_count.broadcasts)} />
 
-      <Card>
-        <CardContent>
-          {/* Keyed so a saved edit re-mounts the form with the new values. */}
-          <TemplateForm
-            key={`${template.name}|${template.hazardType}|${template.body}`}
-            prefix={getEnv().SMS_MESSAGE_PREFIX}
-            template={template}
-          />
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-4">
+        {/* Keyed so a saved edit re-mounts the form with the new values. */}
+        <TemplateForm
+          key={`${values.name}|${values.hazardType}|${values.body}`}
+          prefix={getEnv().SMS_MESSAGE_PREFIX}
+          template={values}
+        />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <h2 className="text-lg font-semibold">Delete template</h2>
-          </CardTitle>
-          <CardDescription>Messages already sent with this template are not affected.</CardDescription>
-        </CardHeader>
-        <CardContent>
+        <DetailCard
+          title="Delete template"
+          description="Messages already sent with this template are not affected."
+          className="items-start"
+        >
           <DeleteTemplateButton id={template.id} name={template.name} />
-        </CardContent>
-      </Card>
+        </DetailCard>
+      </div>
     </>
   );
 }
@@ -57,9 +56,15 @@ export async function TemplateDetail({ params }: TemplateDetailProps) {
 export function TemplateDetailSkeleton() {
   return (
     <>
-      <Skeleton className="h-8 w-48" />
-      <Skeleton className="h-160 rounded-xl" />
-      <Skeleton className="h-32 rounded-xl" />
+      <div className="flex flex-col gap-2 pt-[30px] pb-6">
+        <Skeleton className="h-3 w-36" />
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-28" />
+      </div>
+      <div className="flex flex-col gap-4">
+        <NewTemplateFormSkeleton />
+        <Skeleton className="h-[122px] rounded-xl" />
+      </div>
     </>
   );
 }
