@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { isInMiIsi, OUTSIDE_MI_ISI_MESSAGE } from "@/lib/map";
 import { isRedirectError } from "@/lib/redirect-error";
 import type { ActionResult } from "@/types/action-result";
 import type { ZoneFormValues } from "@/types/zone";
@@ -89,8 +90,13 @@ export function ZoneForm({ zone }: ZoneFormProps) {
   const [latitude, setLatitude] = useState(() => initialValues(zone).latitude);
   const [longitude, setLongitude] = useState(() => initialValues(zone).longitude);
   const [showPicker, setShowPicker] = useState(false);
+  const [pickedOutside, setPickedOutside] = useState(false);
 
   function pick(lat: number, lng: number) {
+    // A tap outside the barangay places nothing; the save would be rejected anyway.
+    const inside = isInMiIsi(lat, lng);
+    setPickedOutside(!inside);
+    if (!inside) return;
     setLatitude(lat.toFixed(6));
     setLongitude(lng.toFixed(6));
   }
@@ -193,7 +199,7 @@ export function ZoneForm({ zone }: ZoneFormProps) {
           </div>
         </div>
         <p id="zone-coordinates-help" className="text-sm text-muted-foreground">
-          Example: 13.1765, 123.6602
+          Example: 13.1953, 123.6886
         </p>
         <Button
           type="button"
@@ -210,7 +216,10 @@ export function ZoneForm({ zone }: ZoneFormProps) {
           <div className="isolate flex flex-col gap-2">
             <ZoneLocationPicker point={toPoint(latitude, longitude)} onPick={pick} />
             <p className="text-sm text-muted-foreground">
-              Tap the center of the zone to fill in the coordinates.
+              Tap the center of the zone, inside the dashed Barangay Mi-isi boundary, to fill in the coordinates.
+            </p>
+            <p role="status" className="text-sm text-destructive empty:hidden">
+              {pickedOutside ? OUTSIDE_MI_ISI_MESSAGE : null}
             </p>
           </div>
         )}

@@ -25,7 +25,7 @@ function form(values: Record<string, string>): FormData {
   return data;
 }
 
-const VALID = { name: " Purok 4 ", description: "", latitude: "13.1765", longitude: "123.6602" };
+const VALID = { name: " Purok 4 ", description: "", latitude: "13.1953", longitude: "123.6886" };
 
 const duplicateName = new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
   code: "P2002",
@@ -39,14 +39,14 @@ describe("createZone", () => {
   it("creates the parsed zone, revalidates, and redirects to /zones", async () => {
     await expect(createZone(null, form(VALID))).rejects.toThrow("NEXT_REDIRECT");
     expect(prisma.farmZone.create).toHaveBeenCalledWith({
-      data: { name: "Purok 4", description: undefined, latitude: 13.1765, longitude: 123.6602 },
+      data: { name: "Purok 4", description: undefined, latitude: 13.1953, longitude: 123.6886 },
     });
     expect(revalidatePath).toHaveBeenCalledWith("/zones", "layout");
     expect(redirect).toHaveBeenCalledWith("/zones");
   });
 
   it("returns field errors for swapped coordinates without touching the database", async () => {
-    const result = await createZone(null, form({ ...VALID, latitude: "123.6602", longitude: "13.1765" }));
+    const result = await createZone(null, form({ ...VALID, latitude: "123.6886", longitude: "13.1953" }));
     expect(prisma.farmZone.create).not.toHaveBeenCalled();
     expect(result.success).toBe(false);
     if (result.success) return;
@@ -73,7 +73,7 @@ describe("updateZone", () => {
     expect(result).toEqual({ success: true, data: undefined });
     expect(prisma.farmZone.update).toHaveBeenCalledWith({
       where: { id: "zone-1" },
-      data: { name: "Purok 4", description: null, latitude: 13.1765, longitude: 123.6602 },
+      data: { name: "Purok 4", description: null, latitude: 13.1953, longitude: 123.6886 },
     });
     expect(redirect).not.toHaveBeenCalled();
   });

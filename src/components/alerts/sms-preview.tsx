@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export function SmsPreview({ text, senderId }: { text: string | null; senderId: string }) {
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-[10px] font-bold tracking-[.06em] text-muted-foreground uppercase">SMS preview · Mobile</p>
+      <p className="text-[10px] font-bold tracking-[.06em] text-muted-foreground uppercase">SMS preview</p>
       <div className="mx-auto w-[270px] max-w-full rounded-[44px] bg-phone-frame p-2.5 shadow-lg">
         <div className="flex h-[400px] flex-col overflow-hidden rounded-[34px] bg-muted">
           <div aria-hidden="true" className="relative flex items-center justify-between bg-card px-6 pt-3 pb-2 text-[11px] font-semibold">
