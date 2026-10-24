@@ -1,12 +1,12 @@
 import { MessageSquareText } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
 import { cn } from "cn";
 
 import { HazardIconTile } from "@/components/alerts/hazard-icon-tile";
 import { ResolveAlertButton } from "@/components/alerts/resolve-alert-button";
 import { BroadcastRows } from "@/components/broadcast/broadcast-rows";
+import { DetailCard } from "@/components/layout/detail-card";
 import { StatusPill } from "@/components/layout/status-pill";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,15 +23,6 @@ interface AlertDetailProps {
 
 /** More than any alert has broadcasts in practice; the list isn't paginated. */
 const BROADCAST_LIMIT = 50;
-
-function DetailCard({ title, children, className }: { title: string; children: ReactNode; className?: string }) {
-  return (
-    <section className={cn("flex min-w-0 flex-col gap-3 rounded-xl border bg-card p-5", className)}>
-      <h2 className="font-heading text-base font-bold tracking-[-0.03em]">{title}</h2>
-      {children}
-    </section>
-  );
-}
 
 function loadAlert(id: string) {
   return prisma.hazardAlert.findUnique({

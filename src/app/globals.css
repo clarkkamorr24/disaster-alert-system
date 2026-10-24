@@ -37,6 +37,17 @@
   --color-accent: var(--accent);
   --color-accent-border: var(--accent-border);
   --color-link: var(--link);
+  --color-accent-muted-foreground: var(--accent-muted-foreground);
+  --color-title-foreground: var(--title-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-control-foreground: var(--control-foreground);
+  --color-avatar: var(--avatar);
+  --color-avatar-foreground: var(--avatar-foreground);
+  --color-scrim: var(--scrim);
+  --color-conditions: var(--conditions);
+  --color-conditions-foreground: var(--conditions-foreground);
+  --color-conditions-label: var(--conditions-label);
+  --color-conditions-muted: var(--conditions-muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -96,6 +107,25 @@
   --accent-foreground: #185d35;
   --accent-border: #c7dfce;
   --link: #276b43;
+  /* Labels on accent (light green) surfaces, such as the zone weather card. */
+  --accent-muted-foreground: #4f7a5e;
+  /* Names in cards and tables, a little softer than the foreground. */
+  --title-foreground: #26342b;
+  /* Captions lighter than muted-foreground: coordinates, card subtitles, row menu icons. */
+  --subtle-foreground: #859087;
+  /* Text on outline controls: filter selects, input add-ons. */
+  --control-foreground: #4d5e53;
+  --avatar: #e7f3ea;
+  --avatar-foreground: #24633e;
+  /* Dialog and drawer backdrops; use with an opacity, e.g. bg-scrim/55. */
+  --scrim: #0b1d12;
+  /* The zones page's Current conditions card; dark green in both themes. */
+  --conditions: #17482d;
+  --conditions-foreground: #ffffff;
+  --conditions-label: #acd0b6;
+  --conditions-muted: #c8dccd;
+  --conditions-glow: radial-gradient(circle at 90% 0, rgb(124 192 143 / 0.24), transparent 42%);
+  --conditions-shadow: 0 5px 18px rgb(23 72 45 / 0.12);
   --destructive: oklch(0.577 0.245 27.325);
   --border: #dfe6e1;
   --input: #dde5df;
@@ -164,6 +194,13 @@
   --accent-foreground: #dcfce7;
   --accent-border: #2c5a3c;
   --link: #6cc28f;
+  --accent-muted-foreground: #9aa89f;
+  --title-foreground: #f0f4f1;
+  --subtle-foreground: #8a988f;
+  --control-foreground: #f0f4f1;
+  --avatar: #16271c;
+  --avatar-foreground: #dcfce7;
+  --conditions-shadow: 0 0 #0000;
   --destructive: oklch(0.704 0.191 22.216);
   --border: #26302a;
   --input: #2f3b33;

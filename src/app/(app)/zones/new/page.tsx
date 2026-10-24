@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { BackToZones } from "@/components/zones/back-to-zones";
+import { BackLink } from "@/components/layout/back-link";
+import { DetailCard } from "@/components/layout/detail-card";
+import { PageHeader } from "@/components/layout/page-header";
 import { ZoneForm } from "@/components/zones/zone-form";
 
 export const metadata: Metadata = {
@@ -10,16 +11,18 @@ export const metadata: Metadata = {
 
 export default function NewZonePage() {
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <BackToZones />
-        <h1 className="text-2xl font-semibold">New zone</h1>
+    <div className="mx-auto flex w-full max-w-2xl flex-col pb-8">
+      <div className="pt-[22px]">
+        <BackLink href="/zones" label="Farm zones" />
       </div>
-      <Card>
-        <CardContent>
-          <ZoneForm />
-        </CardContent>
-      </Card>
+      <PageHeader
+        eyebrow="Association records"
+        title="Add zone"
+        description="Name the purok or sitio and set its center on the map."
+      />
+      <DetailCard title="Zone details">
+        <ZoneForm />
+      </DetailCard>
     </div>
   );
 }

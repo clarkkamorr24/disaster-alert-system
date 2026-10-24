@@ -1,8 +1,8 @@
 import Link from "next/link";
 
+import { DetailCard } from "@/components/layout/detail-card";
 import { MemberForm } from "@/components/members/member-form";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOfficer } from "@/lib/auth/dal";
 import { getZoneOptions } from "@/lib/zone-options";
@@ -14,7 +14,7 @@ function AddZoneFirst() {
       <p className="text-muted-foreground">
         Members belong to a zone. Add a zone first, then come back to add members.
       </p>
-      <Link href="/zones/new" className={buttonVariants({ className: "h-11 px-4 text-base" })}>
+      <Link href="/zones/new" className={buttonVariants({ className: "h-11 px-4 text-[13px]" })}>
         Add a zone first
       </Link>
     </div>
@@ -27,9 +27,9 @@ export async function NewMemberForm() {
   const zones = await getZoneOptions();
 
   return (
-    <Card>
-      <CardContent>{zones.length === 0 ? <AddZoneFirst /> : <MemberForm zones={zones} />}</CardContent>
-    </Card>
+    <DetailCard title="Member details">
+      {zones.length === 0 ? <AddZoneFirst /> : <MemberForm zones={zones} />}
+    </DetailCard>
   );
 }
 

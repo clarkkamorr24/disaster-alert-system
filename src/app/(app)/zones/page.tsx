@@ -5,7 +5,7 @@ import { Suspense } from "react";
 
 import { PAGE_ACTION_CLASS, PageHeader } from "@/components/layout/page-header";
 import { buttonVariants } from "@/components/ui/button";
-import { ZoneList, ZoneListSkeleton } from "@/components/zones/zone-list";
+import { ZonesOverview, ZonesOverviewSkeleton } from "@/components/zones/zones-overview";
 
 export const metadata: Metadata = {
   title: "Zones · Mi-isi Disaster Alert",
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function ZonesPage() {
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="w-full pb-8">
       <PageHeader
         eyebrow="Association records"
         title="Farm zones"
@@ -26,8 +26,8 @@ export default function ZonesPage() {
         }
       />
 
-      <Suspense fallback={<ZoneListSkeleton />}>
-        <ZoneList />
+      <Suspense fallback={<ZonesOverviewSkeleton />}>
+        <ZonesOverview />
       </Suspense>
     </div>
   );

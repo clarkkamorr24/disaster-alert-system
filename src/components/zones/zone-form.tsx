@@ -200,7 +200,7 @@ export function ZoneForm({ zone }: ZoneFormProps) {
           variant="outline"
           aria-expanded={showPicker}
           onClick={() => setShowPicker((shown) => !shown)}
-          className="h-11 self-start px-4 text-base"
+          className="h-11 self-start px-4 text-[13px]"
         >
           <MapPin data-icon="inline-start" />
           {showPicker ? "Hide map" : "Pick on map"}
@@ -216,7 +216,7 @@ export function ZoneForm({ zone }: ZoneFormProps) {
         )}
       </fieldset>
 
-      <Button type="submit" disabled={pending} className="h-11 self-start px-5 text-base">
+      <Button type="submit" disabled={pending} className="h-11 self-start px-5 text-[13px]">
         {pending ? "Saving…" : zone ? "Save zone" : "Add zone"}
       </Button>
     </form>
