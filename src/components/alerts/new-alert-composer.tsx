@@ -4,12 +4,13 @@ import { startTransition, useActionState, useState } from "react";
 import { toast } from "sonner";
 
 import { createAlertAndSend } from "@/actions/alerts";
-import { AlertSummaryCard } from "@/components/alerts/alert-summary-card";
-import { ConfirmAlertSendDialog } from "@/components/alerts/confirm-alert-send-dialog";
 import { HazardTilePicker } from "@/components/alerts/hazard-tile-picker";
 import { FieldSection, LoggedAlertNote, TextField, TitleLevelFields } from "@/components/alerts/new-alert-fields";
 import { SeverityPicker } from "@/components/alerts/severity-picker";
 import { ZoneChipPicker, ZoneSelectAllButton } from "@/components/alerts/zone-chip-picker";
+import { ConfirmSendDialog } from "@/components/broadcast/confirm-send-dialog";
+import { SendSummaryCard } from "@/components/broadcast/send-summary-card";
+import { Button } from "@/components/ui/button";
 import { type AlertDraft, useAlertDraft } from "@/hooks/use-alert-draft";
 import { NO_MEMBERS_MESSAGE, NOT_ENOUGH_CREDITS_MESSAGE } from "@/lib/broadcast/compose";
 import { HAZARD_TYPES, SEVERITIES } from "@/lib/domain/hazards";
@@ -88,6 +89,7 @@ export function NewAlertComposer({ idempotencyKey, prefix, blockLinks, balance, 
       zoneIds: draft.zoneIds,
       send,
       content: draft.message,
+      templateId: draft.templateId,
     };
     startTransition(() => formAction(input));
   }
@@ -187,10 +189,12 @@ export function NewAlertComposer({ idempotencyKey, prefix, blockLinks, balance, 
         )}
       </div>
 
-      <AlertSummaryCard
+      <SendSummaryCard
         memberCount={draft.memberCount}
-        alertLabel={alertLabel}
-        zonesLabel={zonesLabel(draft.selectedZones.map((zone) => zone.name), zones.length)}
+        rows={[
+          { label: "Alert", value: alertLabel },
+          { label: "Zones", value: zonesLabel(draft.selectedZones.map((zone) => zone.name), zones.length) },
+        ]}
         totalCredits={draft.totalCredits}
         balance={balance}
         prefix={prefix}
@@ -198,13 +202,17 @@ export function NewAlertComposer({ idempotencyKey, prefix, blockLinks, balance, 
         blockedReason={reason}
         pending={pending}
         onReview={openConfirm}
-        onLogOnly={() => save(false)}
-      />
+      >
+        <Button type="button" variant="outline" disabled={pending} onClick={() => save(false)} className="h-11 text-[13px]">
+          {pending ? "Saving…" : "Log alert without SMS"}
+        </Button>
+      </SendSummaryCard>
 
-      <ConfirmAlertSendDialog
+      <ConfirmSendDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
-        alertLabel={alertLabel}
+        subject="alert"
+        about={{ label: "Alert", value: alertLabel }}
         memberCount={draft.memberCount}
         totalCredits={draft.totalCredits}
         zones={draft.selectedZones.map((zone) => ({ name: zone.name, count: zone.activeMemberCount }))}

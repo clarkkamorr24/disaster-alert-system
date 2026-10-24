@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   BROADCAST_STATUS_LABELS,
+  deliveryBreakdown,
   deliveryRate,
   deriveBroadcastStatus,
   emptyStatusCounts,
@@ -69,5 +70,15 @@ describe("formatRate", () => {
   it("shows a dash for no rate and drops a trailing .0", () => {
     expect(formatRate(null)).toBe("—");
     expect(formatRate(1)).toBe("100%");
+  });
+});
+
+describe("deliveryBreakdown", () => {
+  it("groups pending with retrying and failed with skipped", () => {
+    expect(deliveryBreakdown({ PENDING: 2, RETRYING: 1, SENT: 5, FAILED: 1, SKIPPED: 3 })).toEqual({
+      sent: 5,
+      pending: 3,
+      notReached: 4,
+    });
   });
 });

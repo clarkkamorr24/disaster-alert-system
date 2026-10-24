@@ -44,7 +44,7 @@ function loadAlert(id: string) {
 
 async function loadBroadcasts(alertId: string) {
   const [broadcasts, totalZones] = await Promise.all([
-    loadBroadcastSummaries(0, BROADCAST_LIMIT, { alertId }),
+    loadBroadcastSummaries({ alertId }, 0, BROADCAST_LIMIT),
     prisma.farmZone.count(),
   ]);
   const zoneNames = await loadBroadcastZoneNames(broadcasts.map((broadcast) => broadcast.id));

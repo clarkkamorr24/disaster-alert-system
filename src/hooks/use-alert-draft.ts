@@ -63,6 +63,8 @@ export function useAlertDraft({ zones, templates, prefix, blockLinks }: DraftOpt
     title: customTitle ?? (hazard ? `${hazard} alert` : ""),
     setTitle: setCustomTitle,
     message,
+    /** The hazard's template the SMS starts from, kept even after edits. */
+    templateId: template?.id ?? null,
     setMessage: setCustomMessage,
     messageEdited: customMessage !== null,
     resetMessage: () => setCustomMessage(null),

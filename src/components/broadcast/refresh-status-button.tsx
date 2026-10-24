@@ -26,7 +26,7 @@ export function RefreshStatusButton({ id }: { id: string }) {
   }
 
   return (
-    <Button variant="outline" disabled={pending} onClick={handleRefresh} className="h-11 px-4 text-base">
+    <Button variant="outline" disabled={pending} onClick={handleRefresh} className="h-11 gap-2 px-4 text-[13px]">
       <RefreshCw data-icon="inline-start" className={pending ? "animate-spin" : undefined} />
       {pending ? "Refreshing…" : "Refresh status"}
     </Button>

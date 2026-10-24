@@ -29,7 +29,7 @@ describe("loadBroadcastSummaries", () => {
       { broadcastId: "b2", status: "PENDING", _count: { _all: 2 } },
     ]);
 
-    const result = await loadBroadcastSummaries(25, 25, { alertId: "a1" });
+    const result = await loadBroadcastSummaries({ alertId: "a1" }, 25, 25);
 
     expect(prisma.broadcast.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { alertId: "a1" }, orderBy: { createdAt: "desc" }, skip: 25, take: 25 }),
@@ -41,12 +41,13 @@ describe("loadBroadcastSummaries", () => {
       { id: "b1", title: "Mayon", recipientCount: 5, sent: 3, notReached: 2, status: "PARTIAL" },
       { id: "b2", title: "Pulong bukas", recipientCount: 2, sent: 0, notReached: 0, status: "SENDING" },
     ]);
+    expect(result[1].counts).toEqual({ PENDING: 2, RETRYING: 0, SENT: 0, FAILED: 0, SKIPPED: 0 });
   });
 
-  it("includes every broadcast when no filter is given", async () => {
+  it("includes every broadcast with an empty filter", async () => {
     prisma.broadcast.findMany.mockResolvedValue([]);
     prisma.broadcastRecipient.groupBy.mockResolvedValue([]);
-    expect(await loadBroadcastSummaries(0, 5)).toEqual([]);
+    expect(await loadBroadcastSummaries({}, 0, 5)).toEqual([]);
     expect(prisma.broadcast.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: {} }));
   });
 });

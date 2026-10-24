@@ -4,11 +4,10 @@ import type { ReactNode } from "react";
 import { SmsPreview } from "@/components/alerts/sms-preview";
 import { Button } from "@/components/ui/button";
 
-interface AlertSummaryCardProps {
+interface SendSummaryCardProps {
   memberCount: number;
-  /** `Hazard · Severity`, or `—` while either is missing. */
-  alertLabel: string;
-  zonesLabel: string;
+  /** Rows above the cost, such as the alert (or what the broadcast is about) and the zones. */
+  rows: { label: string; value: string }[];
   totalCredits: number;
   /** `null` when the balance couldn't be read. */
   balance: number | null;
@@ -19,7 +18,8 @@ interface AlertSummaryCardProps {
   blockedReason: string | null;
   pending: boolean;
   onReview: () => void;
-  onLogOnly: () => void;
+  /** Extra buttons under Review and send, such as Log alert without SMS. */
+  children?: ReactNode;
 }
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -31,11 +31,10 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** The sticky Summary next to the New alert form: recipients, cost, preview, and the two submit buttons. */
-export function AlertSummaryCard({
+/** The sticky Summary next to a send form: recipients, cost, preview, and Review and send. */
+export function SendSummaryCard({
   memberCount,
-  alertLabel,
-  zonesLabel,
+  rows,
   totalCredits,
   balance,
   prefix,
@@ -43,17 +42,17 @@ export function AlertSummaryCard({
   blockedReason,
   pending,
   onReview,
-  onLogOnly,
-}: AlertSummaryCardProps) {
+  children,
+}: SendSummaryCardProps) {
   const format = (n: number) => n.toLocaleString("en-US");
   const overBalance = balance !== null && totalCredits > balance;
 
   return (
     <section
-      aria-labelledby="alert-summary-heading"
+      aria-labelledby="send-summary-heading"
       className="sticky top-[84px] flex min-w-0 flex-[2_1_300px] flex-col gap-4 rounded-xl border bg-card p-[22px]"
     >
-      <h2 id="alert-summary-heading" className="font-heading text-base font-bold tracking-[-0.03em]">
+      <h2 id="send-summary-heading" className="font-heading text-base font-bold tracking-[-0.03em]">
         Summary
       </h2>
       <p className="flex items-baseline gap-2">
@@ -61,8 +60,11 @@ export function AlertSummaryCard({
         <span className="text-sm text-muted-foreground">{memberCount === 1 ? "recipient" : "recipients"}</span>
       </p>
       <div className="flex flex-col gap-2 text-[13px]">
-        <Row label="Alert">{alertLabel}</Row>
-        <Row label="Zones">{zonesLabel}</Row>
+        {rows.map((row) => (
+          <Row key={row.label} label={row.label}>
+            {row.value}
+          </Row>
+        ))}
         <Row label="SMS to queue">
           {format(totalCredits)} {totalCredits === 1 ? "credit" : "credits"}
         </Row>
@@ -77,7 +79,7 @@ export function AlertSummaryCard({
         <Button
           type="button"
           disabled={blockedReason !== null || pending}
-          aria-describedby={blockedReason ? "alert-send-blocked" : undefined}
+          aria-describedby={blockedReason ? "send-blocked-reason" : undefined}
           onClick={onReview}
           className="h-11 gap-2 text-[13px]"
         >
@@ -85,13 +87,11 @@ export function AlertSummaryCard({
           Review and send
         </Button>
         {blockedReason && (
-          <p id="alert-send-blocked" className="text-xs text-muted-foreground">
+          <p id="send-blocked-reason" className="text-xs text-muted-foreground">
             {blockedReason}
           </p>
         )}
-        <Button type="button" variant="outline" disabled={pending} onClick={onLogOnly} className="h-11 text-[13px]">
-          {pending ? "Saving…" : "Log alert without SMS"}
-        </Button>
+        {children}
       </div>
     </section>
   );

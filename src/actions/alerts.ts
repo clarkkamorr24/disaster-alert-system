@@ -114,6 +114,7 @@ export async function createAlertAndSend(input: AlertSendInput): Promise<AlertSe
         const result = await checkAndSend({
           idempotencyKey: form.idempotencyKey,
           content: form.content,
+          templateId: form.templateId,
           loadAudience: async () => ({ ok: true, recipients: check.recipients, alertId: loggedId, retryOfId: null }),
         });
         if (!result.success) return { success: false, error: result.error, alertId };

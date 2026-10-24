@@ -29,6 +29,8 @@ export interface AlertSendInput {
   send: boolean;
   /** The SMS as typed, without the prefix. Ignored when `send` is false. */
   content: string;
+  /** The template the SMS started from; omitted or `null` when none was chosen. */
+  templateId?: string | null;
 }
 
 /**

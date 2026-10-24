@@ -10,6 +10,7 @@ const { env, prisma, gateway, store, sendBroadcast, redirect, revalidatePath } =
     member: { findMany: vi.fn() },
     hazardAlert: { findUnique: vi.fn() },
     broadcast: { findUnique: vi.fn() },
+    messageTemplate: { findUnique: vi.fn() },
   },
   gateway: { blast: vi.fn(), getBlastMessages: vi.fn(), getCreditBalance: vi.fn() },
   store: { findIdByIdempotencyKey: vi.fn(), create: vi.fn(), addBlastId: vi.fn(), updateRecipients: vi.fn() },
@@ -58,6 +59,7 @@ describe("sendBroadcastAction", () => {
         content: "Mi-isi FA: Lahar warning",
         alertId: "alert-1",
         retryOfId: null,
+        templateId: null,
         recipients: [
           { memberId: "m1", phone: "+639171234567", name: "Ana Cruz" },
           { memberId: "m2", phone: "+639181234567", name: "Ben Reyes" },
@@ -66,6 +68,24 @@ describe("sendBroadcastAction", () => {
       { gateway, store, senderId: "Unisoft" },
     );
     expect(revalidatePath).toHaveBeenCalledWith("/broadcasts", "layout");
+    expect(redirect).toHaveBeenCalledWith("/broadcasts/b1");
+  });
+
+  it("passes the chosen template through", async () => {
+    prisma.messageTemplate.findUnique.mockResolvedValue({ id: "t1" });
+
+    await expect(sendBroadcastAction({ ...VALID, templateId: "t1" })).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(prisma.messageTemplate.findUnique).toHaveBeenCalledWith({ where: { id: "t1" }, select: { id: true } });
+    expect(sendBroadcast.mock.calls[0][0]).toMatchObject({ templateId: "t1" });
+  });
+
+  it("saves a template deleted meanwhile as null and still sends", async () => {
+    prisma.messageTemplate.findUnique.mockResolvedValue(null);
+
+    await expect(sendBroadcastAction({ ...VALID, templateId: "t-gone" })).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(sendBroadcast.mock.calls[0][0]).toMatchObject({ templateId: null });
     expect(redirect).toHaveBeenCalledWith("/broadcasts/b1");
   });
 
@@ -202,9 +222,17 @@ describe("sendBroadcastAction with retryOfId", () => {
       content: "Mi-isi FA: Lahar warning",
       alertId: "alert-1",
       retryOfId: "b-orig",
+      templateId: null,
       recipients: [{ memberId: "m2", phone: "+639181234567", name: "Ben Reyes" }],
     });
     expect(redirect).toHaveBeenCalledWith("/broadcasts/b2");
+  });
+
+  it("accepts templateId: null", async () => {
+    await expect(sendBroadcastAction({ ...RESEND, templateId: null })).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(sendBroadcast.mock.calls[0][0]).toMatchObject({ templateId: null });
+    expect(prisma.messageTemplate.findUnique).not.toHaveBeenCalled();
   });
 
   it("refuses when nobody unreached is still active", async () => {
