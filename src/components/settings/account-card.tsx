@@ -1,6 +1,6 @@
 import { ChangePasswordForm } from "@/components/settings/change-password-form";
 import { ProfileForm } from "@/components/settings/profile-form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { requireOfficer } from "@/lib/auth/dal";
 
@@ -10,12 +10,6 @@ export async function AccountCard() {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>
-          <h2 className="text-lg font-semibold">Account</h2>
-        </CardTitle>
-        <CardDescription>The one officer account used to sign in to this system.</CardDescription>
-      </CardHeader>
       <CardContent className="flex flex-col gap-6">
         <section aria-labelledby="profile-heading" className="flex flex-col gap-4">
           <h3 id="profile-heading" className="font-medium">

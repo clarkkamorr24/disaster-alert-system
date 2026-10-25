@@ -24,17 +24,14 @@ export default function SignInPage() {
       <div className="flex justify-center items-center gap-[11px]">
         <AppLogo variant="brand" />
         <div>
-          <p className="font-heading text-[17px] font-bold tracking-[-0.02em]">Mi-isi</p>
+          <p className="font-heading text-[17px] font-bold tracking-[-0.02em] uppercase">Mi-isi</p>
           <p className="text-xs text-muted-foreground">Disaster Alert System</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-4 rounded-xl border bg-card p-6">
         <div>
-          <h1 className="font-heading text-xl font-bold tracking-[-0.03em]">Officer sign in</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Only association officers can access this system.
-          </p>
+          <h1 className="font-heading text-xl font-bold tracking-[-0.03em] text-center">Officer Sign In</h1>
         </div>
         <Suspense fallback={<Skeleton className="h-[226px]" />}>
           <SignInGate />

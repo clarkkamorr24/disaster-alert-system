@@ -1,10 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { HazardType } from "@/generated/prisma/enums";
 import { HAZARD_TYPES } from "@/lib/domain/hazards";
-import { TEMPLATE_PLACEHOLDERS } from "@/lib/templates/render";
 
 /** The select value for "Any hazard"; submitted as a blank hazard type. */
 export const ANY_HAZARD = "ANY";
@@ -46,25 +44,5 @@ export function HazardSelect({ id, value, onChange, errorProps }: HazardSelectPr
         })}
       </SelectContent>
     </Select>
-  );
-}
-
-/** Buttons that insert `{hazard}`, `{level}`, `{zones}`, or `{date}` into the message. */
-export function PlaceholderChips({ onInsert }: { onInsert: (name: string) => void }) {
-  return (
-    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Insert a placeholder">
-      <span className="text-xs text-muted-foreground">Insert:</span>
-      {TEMPLATE_PLACEHOLDERS.map((name) => (
-        <Button
-          key={name}
-          type="button"
-          variant="outline"
-          onClick={() => onInsert(name)}
-          className="h-11 border-accent-border px-2.5 font-mono text-[13px] font-semibold text-link sm:h-8 dark:border-accent-border dark:text-link"
-        >
-          {`{${name}}`}
-        </Button>
-      ))}
-    </div>
   );
 }
