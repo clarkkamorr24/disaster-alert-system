@@ -177,7 +177,7 @@ export default function ZoneMap({ zones }: ZoneMapProps) {
         maxBoundsViscosity={1}
         scrollWheelZoom={false}
         attributionControl={false}
-        className="zone-map size-full"
+        className={cn("zone-map size-full", zones.some((zone) => zone.worstSeverity) && "zone-map--alerts")}
       >
         <TileLayer url={OSM_TILE_URL} attribution={OSM_ATTRIBUTION} />
         <AttributionControl position="bottomleft" />
