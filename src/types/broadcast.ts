@@ -1,4 +1,5 @@
 import type { HazardType, RecipientStatus } from "@/generated/prisma/enums";
+import type { PageSize } from "@/lib/pagination";
 
 /** One member a broadcast goes to, snapshotted at send time. */
 export type Recipient = {
@@ -133,6 +134,8 @@ export interface BroadcastListFilters {
   kind: BroadcastKind;
   /** 1-based. */
   page: number;
+  /** Rows per page, one of `PAGE_SIZES`. */
+  size: PageSize;
 }
 
 /** Which recipients the delivery report lists. */

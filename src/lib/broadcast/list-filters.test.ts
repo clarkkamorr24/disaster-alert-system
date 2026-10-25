@@ -2,21 +2,22 @@ import { describe, expect, it } from "vitest";
 
 import { broadcastListHref, broadcastListWhere, parseBroadcastListFilters } from "./list-filters";
 
-const DEFAULTS = { q: "", kind: "all", page: 1 } as const;
+const DEFAULTS = { q: "", kind: "all", page: 1, size: 10 } as const;
 
 describe("parseBroadcastListFilters", () => {
   it("reads the search, kind, and page", () => {
-    expect(parseBroadcastListFilters({ q: " lahar ", kind: "resend", page: "3" })).toEqual({
+    expect(parseBroadcastListFilters({ q: " lahar ", kind: "resend", page: "3", size: "50" })).toEqual({
       q: "lahar",
       kind: "resend",
       page: 3,
+      size: 50,
     });
   });
 
   it("falls back for missing, invalid, or repeated values", () => {
     expect(parseBroadcastListFilters({})).toEqual(DEFAULTS);
     expect(parseBroadcastListFilters({ kind: "everything", page: "0" })).toEqual(DEFAULTS);
-    expect(parseBroadcastListFilters({ page: "abc" })).toEqual(DEFAULTS);
+    expect(parseBroadcastListFilters({ page: "abc", size: "abc" })).toEqual(DEFAULTS);
     expect(parseBroadcastListFilters({ kind: ["alert", "resend"] }).kind).toBe("alert");
   });
 });
@@ -49,8 +50,9 @@ describe("broadcastListHref", () => {
   });
 
   it("keeps the search, kind, and page", () => {
-    expect(broadcastListHref({ q: "lahar flow", kind: "alert", page: 1 }, 2)).toBe(
+    expect(broadcastListHref({ q: "lahar flow", kind: "alert", page: 1, size: 10 }, 2)).toBe(
       "/broadcasts?q=lahar+flow&kind=alert&page=2",
     );
+    expect(broadcastListHref({ ...DEFAULTS, kind: "resend", size: 100 })).toBe("/broadcasts?kind=resend&size=100");
   });
 });

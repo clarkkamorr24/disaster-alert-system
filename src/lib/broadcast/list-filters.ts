@@ -1,8 +1,9 @@
 import type { Prisma } from "@/generated/prisma/client";
+import { type PageSize, parsePageSize } from "@/lib/pagination";
 import type { BroadcastKind, BroadcastListFilters } from "@/types/broadcast";
 
 /** How many broadcasts the history shows per page. */
-export const BROADCASTS_PER_PAGE = 25;
+export const BROADCASTS_PER_PAGE: PageSize = 10;
 
 const KINDS: readonly BroadcastKind[] = ["all", "alert", "announcement", "resend"];
 
@@ -27,6 +28,7 @@ export function parseBroadcastListFilters(params: SearchParams): BroadcastListFi
     q: first(params.q),
     kind: KINDS.includes(kind as BroadcastKind) ? (kind as BroadcastKind) : "all",
     page: Number.isInteger(page) && page > 0 ? page : 1,
+    size: parsePageSize(first(params.size), BROADCASTS_PER_PAGE),
   };
 }
 
@@ -72,6 +74,7 @@ export function broadcastListHref(filters: BroadcastListFilters, page = filters.
   const params = new URLSearchParams();
   if (filters.q) params.set("q", filters.q);
   if (filters.kind !== "all") params.set("kind", filters.kind);
+  if (filters.size !== BROADCASTS_PER_PAGE) params.set("size", String(filters.size));
   if (page > 1) params.set("page", String(page));
   const query = params.toString();
   return query ? `/broadcasts?${query}` : "/broadcasts";

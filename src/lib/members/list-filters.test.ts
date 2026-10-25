@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { memberListHref, memberListWhere, parseMemberListFilters } from "./list-filters";
 
-const DEFAULTS = { q: "", zoneId: undefined, status: "active", page: 1 } as const;
+const DEFAULTS = { q: "", zoneId: undefined, status: "active", page: 1, size: 10 } as const;
 
 describe("parseMemberListFilters", () => {
   it("falls back to active members on page 1", () => {
@@ -11,9 +11,9 @@ describe("parseMemberListFilters", () => {
 
   it("reads trimmed values and ignores invalid ones", () => {
     expect(
-      parseMemberListFilters({ q: " juan ", zone: "z1", status: "all", page: "3" }),
-    ).toEqual({ q: "juan", zoneId: "z1", status: "all", page: 3 });
-    expect(parseMemberListFilters({ zone: "", status: "deleted", page: "-2" })).toEqual(DEFAULTS);
+      parseMemberListFilters({ q: " juan ", zone: "z1", status: "all", page: "3", size: "100" }),
+    ).toEqual({ q: "juan", zoneId: "z1", status: "all", page: 3, size: 100 });
+    expect(parseMemberListFilters({ zone: "", status: "deleted", page: "-2", size: "1000" })).toEqual(DEFAULTS);
     expect(parseMemberListFilters({ page: "abc" }).page).toBe(1);
   });
 
@@ -58,8 +58,9 @@ describe("memberListHref", () => {
   });
 
   it("keeps the filters and sets the page", () => {
-    expect(memberListHref({ q: "0917", zoneId: "z1", status: "all", page: 1 }, 2)).toBe(
+    expect(memberListHref({ q: "0917", zoneId: "z1", status: "all", page: 1, size: 10 }, 2)).toBe(
       "/members?q=0917&zone=z1&status=all&page=2",
     );
+    expect(memberListHref({ ...DEFAULTS, size: 25 })).toBe("/members?size=25");
   });
 });
