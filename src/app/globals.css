@@ -86,6 +86,14 @@
   --color-marker-moderate: var(--marker-moderate);
   --color-marker-low: var(--marker-low);
   --color-marker-clear: var(--marker-clear);
+  --color-zone-area-sky: var(--zone-area-sky);
+  --color-zone-area-blue: var(--zone-area-blue);
+  --color-zone-area-indigo: var(--zone-area-indigo);
+  --color-zone-area-violet: var(--zone-area-violet);
+  --color-zone-area-purple: var(--zone-area-purple);
+  --color-zone-area-fuchsia: var(--zone-area-fuchsia);
+  --color-zone-area-pink: var(--zone-area-pink);
+  --color-zone-area-cyan: var(--zone-area-cyan);
   --color-delivery-sent: var(--delivery-sent);
   --color-delivery-pending: var(--delivery-pending);
   --color-delivery-failed: var(--delivery-failed);
@@ -193,6 +201,15 @@
   --marker-moderate: #d69222;
   --marker-low: #6f8074;
   --marker-clear: #6f8074;
+  /* Purok areas on the map (ZONE_COLORS); no severity hues. The same in both themes. */
+  --zone-area-sky: #0284c7;
+  --zone-area-blue: #2563eb;
+  --zone-area-indigo: #4f46e5;
+  --zone-area-violet: #7c3aed;
+  --zone-area-purple: #9333ea;
+  --zone-area-fuchsia: #c026d3;
+  --zone-area-pink: #db2777;
+  --zone-area-cyan: #0891b2;
   /* Delivery bars: sent, pending + retrying, not reached, on a light track. */
   --delivery-sent: #3a935c;
   --delivery-pending: #d69222;
@@ -439,6 +456,23 @@ body .leaflet-container {
   stroke-width: 2.5px;
   stroke-dasharray: 6 4;
 }
+
+/* A purok's drawn area (zone-map.tsx), in its ZONE_COLORS color. */
+.leaflet-container .zone-area {
+  stroke: var(--area-color);
+  stroke-width: 2px;
+  fill: var(--area-color);
+  fill-opacity: 0.18;
+}
+
+.zone-area--sky { --area-color: var(--zone-area-sky); }
+.zone-area--blue { --area-color: var(--zone-area-blue); }
+.zone-area--indigo { --area-color: var(--zone-area-indigo); }
+.zone-area--violet { --area-color: var(--zone-area-violet); }
+.zone-area--purple { --area-color: var(--zone-area-purple); }
+.zone-area--fuchsia { --area-color: var(--zone-area-fuchsia); }
+.zone-area--pink { --area-color: var(--zone-area-pink); }
+.zone-area--cyan { --area-color: var(--zone-area-cyan); }
 
 .zone-pin--critical { --pin-color: var(--marker-critical); }
 .zone-pin--high { --pin-color: var(--marker-high); }

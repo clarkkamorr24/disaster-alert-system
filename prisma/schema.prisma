@@ -72,6 +72,8 @@ model FarmZone {
   description String?
   latitude    Float
   longitude   Float
+  boundary    Json? // GeoJSON Polygon drawn by the officer; null = shown as a pin only
+  color       String? // ZONE_COLORS key for the drawn area, e.g. "sky"
 
   members Member[]
   alerts  HazardAlert[]

@@ -4,7 +4,8 @@ import { prisma } from "@/lib/db";
 import { computeZoneStatuses } from "@/lib/domain/zone-status";
 import { describeWeatherCode, forecastTimeToDate, getZoneWeather } from "@/lib/weather/open-meteo";
 import type { ZoneWeather } from "@/types/weather";
-import type { ZoneMapPoint } from "@/types/zone";
+import { toZoneColor } from "@/lib/zone-colors";
+import type { ZoneBoundary, ZoneMapPoint } from "@/types/zone";
 
 /** Every zone with its status and weather, as the dashboard and the zones page show them. */
 export interface ZoneOverviewData {
@@ -31,6 +32,8 @@ export async function loadZoneOverview(): Promise<ZoneOverviewData> {
         name: true,
         latitude: true,
         longitude: true,
+        boundary: true,
+        color: true,
         _count: { select: { members: { where: { isActive: true } } } },
       },
     }),
@@ -63,6 +66,9 @@ export async function loadZoneOverview(): Promise<ZoneOverviewData> {
         name: zone.name,
         latitude: zone.latitude,
         longitude: zone.longitude,
+        // Written only through zoneInputSchema, so a stored boundary is always a valid ZoneBoundary.
+        boundary: zone.boundary as ZoneBoundary | null,
+        color: toZoneColor(zone.color),
         worstSeverity: statuses[i].worstSeverity,
         activeAlertTitles: statuses[i].activeAlertIds.map((id) => titleById.get(id) ?? ""),
         memberCount: zone._count.members,

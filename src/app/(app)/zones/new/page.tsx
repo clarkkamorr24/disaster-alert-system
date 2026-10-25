@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { BackLink } from "@/components/layout/back-link";
-import { DetailCard } from "@/components/layout/detail-card";
 import { PageHeader } from "@/components/layout/page-header";
-import { ZoneForm } from "@/components/zones/zone-form";
+import { NewZoneForm, NewZoneFormSkeleton } from "@/components/zones/new-zone-form";
 
 export const metadata: Metadata = {
   title: "New zone · Mi-isi Disaster Alert",
@@ -18,11 +18,11 @@ export default function NewZonePage() {
       <PageHeader
         eyebrow="Association records"
         title="Add zone"
-        description="Name the purok or sitio and set its center on the map."
+        description="Name the purok or sitio, set its center, and draw its boundary on the map."
       />
-      <DetailCard title="Zone details">
-        <ZoneForm />
-      </DetailCard>
+      <Suspense fallback={<NewZoneFormSkeleton />}>
+        <NewZoneForm />
+      </Suspense>
     </div>
   );
 }

@@ -73,9 +73,42 @@ describe("updateZone", () => {
     expect(result).toEqual({ success: true, data: undefined });
     expect(prisma.farmZone.update).toHaveBeenCalledWith({
       where: { id: "zone-1" },
-      data: { name: "Purok 4", description: null, latitude: 13.1953, longitude: 123.6886 },
+      data: {
+        name: "Purok 4",
+        description: null,
+        latitude: 13.1953,
+        longitude: 123.6886,
+        boundary: Prisma.DbNull,
+        color: null,
+      },
     });
     expect(redirect).not.toHaveBeenCalled();
+  });
+
+  it("saves a boundary and color, and stores a cleared boundary as a database NULL", async () => {
+    const boundary = {
+      type: "Polygon",
+      coordinates: [
+        [
+          [123.6866, 13.1933],
+          [123.6906, 13.1933],
+          [123.6906, 13.1973],
+          [123.6866, 13.1973],
+          [123.6866, 13.1933],
+        ],
+      ],
+    };
+    await updateZone("zone-1", null, form({ ...VALID, boundary: JSON.stringify(boundary), color: "cyan" }));
+    expect(prisma.farmZone.update).toHaveBeenLastCalledWith({
+      where: { id: "zone-1" },
+      data: expect.objectContaining({ boundary, color: "cyan" }),
+    });
+
+    await updateZone("zone-1", null, form({ ...VALID, boundary: "", color: "" }));
+    expect(prisma.farmZone.update).toHaveBeenLastCalledWith({
+      where: { id: "zone-1" },
+      data: expect.objectContaining({ boundary: Prisma.DbNull, color: null }),
+    });
   });
 
   it("maps a duplicate name to a field error", async () => {

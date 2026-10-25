@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod";
 
-import { isInMiIsi, OUTSIDE_MI_ISI_MESSAGE } from "@/lib/map";
+import { isInMiIsi, latLngsToBoundary, OUTSIDE_MI_ISI_MESSAGE } from "@/lib/map";
 
-import { isInPhilippines, OUTSIDE_PHILIPPINES_MESSAGE, zoneInputSchema } from "./zone";
+import {
+  BOUNDARY_OUTSIDE_MI_ISI_MESSAGE,
+  CENTER_OUTSIDE_BOUNDARY_MESSAGE,
+  isInPhilippines,
+  OUTSIDE_PHILIPPINES_MESSAGE,
+  zoneInputSchema,
+} from "./zone";
 
 describe("zoneInputSchema", () => {
   it("accepts a valid zone", () => {
@@ -83,5 +90,61 @@ describe("Barangay Mi-isi check", () => {
     expect(isInMiIsi(13.182, 123.68)).toBe(true);
     expect(isInMiIsi(13.17, 123.66)).toBe(false);
     expect(isInMiIsi(13.26, 123.69)).toBe(false);
+  });
+});
+
+describe("boundary and color", () => {
+  const CENTER = { name: "Purok 2", latitude: 13.2, longitude: 123.692 };
+  const SQUARE: [number, number][] = [
+    [13.197, 123.689],
+    [13.197, 123.695],
+    [13.203, 123.695],
+    [13.203, 123.689],
+  ];
+
+  function issues(input: Record<string, unknown>) {
+    return zoneInputSchema.safeParse({ ...CENTER, ...input }).error?.issues ?? [];
+  }
+
+  it("accepts a boundary sent as form JSON, and a color", () => {
+    const boundary = latLngsToBoundary(SQUARE);
+    const parsed = zoneInputSchema.parse({ ...CENTER, boundary: JSON.stringify(boundary), color: "violet" });
+    expect(parsed.boundary).toEqual(boundary);
+    expect(parsed.color).toBe("violet");
+  });
+
+  it("treats a blank boundary and color as none", () => {
+    const parsed = zoneInputSchema.parse({ ...CENTER, boundary: "", color: "" });
+    expect(parsed.boundary).toBeUndefined();
+    expect(parsed.color).toBeUndefined();
+  });
+
+  it("rejects bad JSON, an unclosed ring, and too few corners on boundary", () => {
+    const open = latLngsToBoundary(SQUARE);
+    open.coordinates[0].pop();
+    for (const boundary of ["{not json", JSON.stringify(open), JSON.stringify(latLngsToBoundary(SQUARE.slice(0, 2)))]) {
+      // The form reads flattened field errors, which group nested paths under `boundary`.
+      const { error } = zoneInputSchema.safeParse({ ...CENTER, boundary });
+      expect(z.flattenError(error!).fieldErrors).toEqual({ boundary: ["Draw the boundary again."] });
+    }
+  });
+
+  it("rejects a corner outside Mi-isi", () => {
+    const boundary = latLngsToBoundary([...SQUARE.slice(0, 3), [13.203, 123.72]]);
+    expect(issues({ boundary })).toEqual([
+      expect.objectContaining({ path: ["boundary"], message: BOUNDARY_OUTSIDE_MI_ISI_MESSAGE }),
+    ]);
+  });
+
+  it("rejects a center outside the boundary, since the label sits there", () => {
+    expect(issues({ boundary: latLngsToBoundary(SQUARE), latitude: 13.1953, longitude: 123.6886 })).toEqual([
+      expect.objectContaining({ path: ["boundary"], message: CENTER_OUTSIDE_BOUNDARY_MESSAGE }),
+    ]);
+  });
+
+  it("rejects an unknown color", () => {
+    expect(issues({ color: "red" })).toEqual([
+      expect.objectContaining({ path: ["color"], message: "Choose a color." }),
+    ]);
   });
 });
