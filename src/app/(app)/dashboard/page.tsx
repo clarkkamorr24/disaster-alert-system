@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
-import { ActiveAlerts, ActiveAlertsSkeleton } from "@/components/dashboard/active-alerts";
 import { CreditStatCard } from "@/components/dashboard/credit-card";
 import { DashboardFooter } from "@/components/dashboard/dashboard-footer";
 import { RecentBroadcasts, RecentBroadcastsSkeleton } from "@/components/dashboard/recent-broadcasts";
@@ -19,7 +18,7 @@ export default function DashboardPage() {
       <PageHeader
         eyebrow="Association overview"
         title="Dashboard"
-        description="Active hazards, zone conditions and recent SMS broadcasts."
+        description="Zone status, weather and recent SMS broadcasts."
       />
 
       {/* Both boundaries share one grid, so the four cards line up whichever loads first. */}
@@ -31,10 +30,6 @@ export default function DashboardPage() {
           <CreditStatCard />
         </Suspense>
       </div>
-
-      <Suspense fallback={<ActiveAlertsSkeleton />}>
-        <ActiveAlerts />
-      </Suspense>
 
       <Suspense fallback={<ZoneOverviewSkeleton />}>
         <ZoneOverview />

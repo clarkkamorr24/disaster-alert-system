@@ -14,7 +14,7 @@ export function PageHeader({ eyebrow, title, description, action }: PageHeaderPr
   return (
     <div className="flex flex-wrap items-end justify-between gap-4 pt-[30px] pb-6">
       <div className="min-w-0">
-        <p className="mb-[5px] text-[11px] font-bold tracking-[.08em] text-[#668070] uppercase dark:text-muted-foreground">
+        <p className="mb-[5px] text-[13px] font-bold tracking-[.08em] text-[#668070] uppercase dark:text-muted-foreground">
           {eyebrow}
         </p>
         <h1 className="font-heading text-[clamp(24px,2.3vw,31px)] font-bold tracking-[-0.03em]">

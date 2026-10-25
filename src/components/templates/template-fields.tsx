@@ -60,7 +60,7 @@ export function PlaceholderChips({ onInsert }: { onInsert: (name: string) => voi
           type="button"
           variant="outline"
           onClick={() => onInsert(name)}
-          className="h-11 border-accent-border px-2.5 font-mono text-[11px] font-semibold text-link sm:h-8 dark:border-accent-border dark:text-link"
+          className="h-11 border-accent-border px-2.5 font-mono text-[13px] font-semibold text-link sm:h-8 dark:border-accent-border dark:text-link"
         >
           {`{${name}}`}
         </Button>

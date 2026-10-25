@@ -35,7 +35,7 @@ export function StatCard({ label, value, hint, icon: Icon, tone, hintPulse = fal
         <strong className="mt-[3px] mb-px font-heading text-[25px] leading-[1.25] font-bold tabular-nums">
           {value}
         </strong>
-        <small className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <small className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
           {hintPulse && (
             <span aria-hidden="true" className="critical-ping size-1.5 shrink-0 rounded-full bg-status-critical" />
           )}

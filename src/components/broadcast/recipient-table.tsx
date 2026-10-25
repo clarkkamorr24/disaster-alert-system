@@ -55,7 +55,7 @@ export function RecipientTable({ recipients, now }: RecipientTableProps) {
                 <span className="flex flex-col gap-0.5">
                   <StatusText tone={tone}>{label}</StatusText>
                   {showReason && (
-                    <small className="max-w-64 text-[11px] whitespace-normal text-subtle-foreground">
+                    <small className="max-w-64 text-[13px] whitespace-normal text-subtle-foreground">
                       {recipient.failReason}
                     </small>
                   )}

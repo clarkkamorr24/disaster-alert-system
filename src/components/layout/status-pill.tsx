@@ -41,19 +41,26 @@ interface StatusPillProps {
   tone: StatusTone;
   /** Pulses the dot for an active Critical state (see `isCriticalActive`). */
   pulse?: boolean;
+  /** `lg` for where status is the main thing to read, such as the dashboard's zone monitoring. */
+  size?: "default" | "lg";
   children: ReactNode;
 }
 
 /** A status label on a soft background with a dot, such as `CRITICAL` or `CLEAR`. */
-export function StatusPill({ tone, pulse = false, children }: StatusPillProps) {
+export function StatusPill({ tone, pulse = false, size = "default", children }: StatusPillProps) {
+  const lg = size === "lg";
   return (
     <span
       className={cn(
-        "inline-flex min-h-6 items-center gap-1.5 rounded-full px-[9px] text-[10px] font-bold whitespace-nowrap uppercase",
+        "inline-flex items-center rounded-full font-bold whitespace-nowrap uppercase",
+        lg ? "min-h-8 gap-2 px-3 text-[13px]" : "min-h-6 gap-1.5 px-[9px] text-[10px]",
         PILL_CLASS[tone],
       )}
     >
-      <span aria-hidden="true" className={cn("size-1.5 shrink-0 rounded-full bg-current", pulse && "critical-ping")} />
+      <span
+        aria-hidden="true"
+        className={cn("shrink-0 rounded-full bg-current", lg ? "size-2" : "size-1.5", pulse && "critical-ping")}
+      />
       {children}
     </span>
   );
@@ -64,7 +71,7 @@ export function StatusText({ tone, children, className }: { tone: StatusTone; ch
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap",
+        "inline-flex items-center gap-1.5 text-[13px] font-semibold whitespace-nowrap",
         TEXT_CLASS[tone],
         className,
       )}

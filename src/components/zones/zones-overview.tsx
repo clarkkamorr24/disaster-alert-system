@@ -37,7 +37,7 @@ export async function ZonesOverview() {
               <h2 id="zone-overview-heading" className="font-heading text-[15px] font-semibold tracking-[-0.03em]">
                 Zone overview
               </h2>
-              <p className="mt-[3px] text-[11px] text-subtle-foreground">
+              <p className="mt-[3px] text-[13px] text-subtle-foreground">
                 {overviewSubtitle(zones.length, weatherUpdatedAt)}
               </p>
             </div>

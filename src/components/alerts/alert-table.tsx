@@ -60,11 +60,11 @@ export function AlertTable({ rows, totalZones, now }: AlertTableProps) {
                     {/* The link covers the whole row, so a click anywhere on it opens the alert. */}
                     <Link
                       href={`/alerts/${alert.id}`}
-                      className="text-xs font-semibold text-[#26342b] outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/25 focus-visible:after:ring-inset dark:text-foreground"
+                      className="text-sm font-semibold text-[#26342b] outline-none after:absolute after:inset-0 focus-visible:after:ring-3 focus-visible:after:ring-ring/25 focus-visible:after:ring-inset dark:text-foreground"
                     >
                       {alert.title}
                     </Link>
-                    <small className="text-[11px] text-[#8a958e] dark:text-muted-foreground">
+                    <small className="text-[13px] text-[#8a958e] dark:text-muted-foreground">
                       {alert.officialLevel ? `${hazard} · ${alert.officialLevel}` : hazard}
                     </small>
                   </span>
@@ -83,7 +83,7 @@ export function AlertTable({ rows, totalZones, now }: AlertTableProps) {
               <TableCell>
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 text-[11px] font-semibold",
+                    "inline-flex items-center gap-1.5 text-[13px] font-semibold",
                     active ? "text-status-clear" : "text-status-neutral",
                   )}
                 >

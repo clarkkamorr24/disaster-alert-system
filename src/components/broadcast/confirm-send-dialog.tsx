@@ -86,7 +86,7 @@ export function ConfirmSendDialog({
               {zones.map((zone) => (
                 <li
                   key={zone.name}
-                  className="inline-flex min-h-6 items-center rounded-md border border-accent-border bg-accent px-2 text-[11px] font-semibold text-primary"
+                  className="inline-flex min-h-6 items-center rounded-md border border-accent-border bg-accent px-2 text-[13px] font-semibold text-primary"
                 >
                   {zone.count === undefined ? zone.name : `${zone.name} · ${zone.count}`}
                 </li>

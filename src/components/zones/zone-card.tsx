@@ -26,10 +26,10 @@ export function ZoneCard({ zone }: { zone: ZoneMapPoint }) {
       <strong className="mt-3.5 font-heading text-[15px] font-bold tracking-[-0.03em] text-title-foreground">
         {zone.name}
       </strong>
-      <small className="mt-0.5 mb-3.5 text-[11px] text-subtle-foreground tabular-nums">
+      <small className="mt-0.5 mb-3.5 text-[13px] text-subtle-foreground tabular-nums">
         {formatCoordinates(zone.latitude, zone.longitude)}
       </small>
-      <div className="mt-auto flex justify-between gap-2 border-t border-row-border pt-3 text-[11px] text-table-foreground">
+      <div className="mt-auto flex justify-between gap-2 border-t border-row-border pt-3 text-[13px] text-table-foreground">
         <span className="flex items-center gap-[5px]">
           <Users className="size-[15px]" strokeWidth={1.75} aria-hidden="true" />
           {zone.memberCount} {zone.memberCount === 1 ? "member" : "members"}
