@@ -30,7 +30,7 @@ export function ZoneSelectAllButton({
       variant="outline"
       disabled={disabled}
       onClick={() => onChange(allSelected ? [] : zones.map((zone) => zone.id))}
-      className="h-11 px-2.5 text-[11px] sm:h-[30px]"
+      className="h-11 px-2.5 text-[13px] sm:h-[30px]"
     >
       {allSelected ? "Clear all" : "Select all zones"}
     </Button>

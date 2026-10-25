@@ -24,7 +24,7 @@ export function PlaceholderBanner() {
         {TEMPLATE_PLACEHOLDERS.map((name) => (
           <li
             key={name}
-            className="rounded-md border border-accent-border bg-card px-2 py-1 font-mono text-[11px] font-semibold text-link"
+            className="rounded-md border border-accent-border bg-card px-2 py-1 font-mono text-[13px] font-semibold text-link"
           >
             {`{${name}}`}
           </li>

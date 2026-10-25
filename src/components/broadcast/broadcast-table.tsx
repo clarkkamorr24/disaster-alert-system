@@ -74,7 +74,7 @@ export function BroadcastTable({ rows, zoneNames, totalZones, now }: BroadcastTa
                     >
                       {broadcast.title}
                     </Link>
-                    <small className="text-[11px] text-subtle-foreground">{sentAt}</small>
+                    <small className="text-[13px] text-subtle-foreground">{sentAt}</small>
                   </span>
                 </div>
               </TableCell>
@@ -83,7 +83,7 @@ export function BroadcastTable({ rows, zoneNames, totalZones, now }: BroadcastTa
                   <span className="font-semibold text-title-foreground tabular-nums">
                     {broadcast.recipientCount.toLocaleString("en-US")}
                   </span>
-                  <small className="text-[11px] text-subtle-foreground">
+                  <small className="text-[13px] text-subtle-foreground">
                     {zonesLabel(zoneNames.get(broadcast.id) ?? [], totalZones)}
                   </small>
                 </span>

@@ -102,7 +102,7 @@ export function AppSidebar({ badges, footer }: AppSidebarProps) {
             <span className="font-heading text-[17px] font-bold tracking-[-0.02em] text-white">
               MI-ISI
             </span>
-            <span className="mt-px text-[11px] font-medium text-[#a9c4b2]">
+            <span className="mt-px text-[13px] font-medium text-[#a9c4b2]">
               Disaster Alert System
             </span>
           </span>

@@ -12,7 +12,7 @@ export function SmsPreview({ text, senderId }: { text: string | null; senderId: 
       <p className="text-[10px] font-bold tracking-[.06em] text-muted-foreground uppercase">SMS preview</p>
       <div className="mx-auto w-[270px] max-w-full rounded-[44px] bg-phone-frame p-2.5 shadow-lg">
         <div className="flex h-[400px] flex-col overflow-hidden rounded-[34px] bg-muted">
-          <div aria-hidden="true" className="relative flex items-center justify-between bg-card px-6 pt-3 pb-2 text-[11px] font-semibold">
+          <div aria-hidden="true" className="relative flex items-center justify-between bg-card px-6 pt-3 pb-2 text-[13px] font-semibold">
             <span>9:41</span>
             <span className="absolute top-2 left-1/2 h-5 w-[70px] -translate-x-1/2 rounded-full bg-phone-frame" />
             <span className="flex items-center gap-1">

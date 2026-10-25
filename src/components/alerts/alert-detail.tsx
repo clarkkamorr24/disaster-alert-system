@@ -69,7 +69,7 @@ export async function AlertDetail({ params }: AlertDetailProps) {
         <div className="flex min-w-0 items-start gap-3.5">
           <HazardIconTile type={alert.hazardType} className="size-11 rounded-[10px] [&_svg]:size-[22px]" />
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-[11px] font-bold tracking-[.08em] text-muted-foreground uppercase">
+            <p className="text-[13px] font-bold tracking-[.08em] text-muted-foreground uppercase">
               {HAZARD_TYPES[alert.hazardType].label}
             </p>
             <h1 className="font-heading text-[22px] leading-tight font-bold tracking-[-0.03em]">{alert.title}</h1>
@@ -77,7 +77,7 @@ export async function AlertDetail({ params }: AlertDetailProps) {
               <StatusPill tone={severityTone(alert.severity)} pulse={isCriticalActive(alert.severity, alert.status)}>{SEVERITIES[alert.severity].label}</StatusPill>
               <span
                 className={cn(
-                  "inline-flex items-center gap-1.5 text-[11px] font-semibold",
+                  "inline-flex items-center gap-1.5 text-[13px] font-semibold",
                   isActive ? "text-status-clear" : "text-status-neutral",
                 )}
               >

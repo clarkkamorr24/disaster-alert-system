@@ -120,7 +120,7 @@ export function CurrentConditions({ zones, weather }: CurrentConditionsProps) {
         />
       </div>
       {level !== "NONE" && (
-        <p className="m-[15px] flex items-start gap-2 rounded-lg bg-status-advisory-soft p-[11px] text-[11px] leading-[1.45] text-status-advisory">
+        <p className="m-[15px] flex items-start gap-2 rounded-lg bg-status-advisory-soft p-[11px] text-[13px] leading-[1.45] text-status-advisory">
           <Info className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
           <span>
             {LEVEL_LABELS[level]} rainfall level forecast for {zone.name}. Reference only, not an official

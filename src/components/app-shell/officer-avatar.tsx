@@ -12,7 +12,7 @@ interface OfficerAvatarProps {
 export function OfficerAvatar({ initials, className }: OfficerAvatarProps) {
   return (
     <Avatar className={cn("after:hidden", className)} aria-hidden="true">
-      <AvatarFallback className="bg-[#dcefe1] text-[11px] font-bold text-[#174d2d]">
+      <AvatarFallback className="bg-[#dcefe1] text-[13px] font-bold text-[#174d2d]">
         {initials}
       </AvatarFallback>
     </Avatar>

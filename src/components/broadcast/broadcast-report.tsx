@@ -123,7 +123,7 @@ export async function BroadcastReport({ params, searchParams }: BroadcastReportP
         <section aria-labelledby="broadcast-message-heading" className="flex flex-col gap-2">
           <h2
             id="broadcast-message-heading"
-            className="text-[11px] font-bold tracking-[.06em] text-muted-foreground uppercase"
+            className="text-[13px] font-bold tracking-[.06em] text-muted-foreground uppercase"
           >
             Message
           </h2>

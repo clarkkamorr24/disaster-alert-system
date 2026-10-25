@@ -15,7 +15,7 @@ export function StatusTiles({ counts }: { counts: Record<RecipientStatus, number
     <dl className="grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-2.5">
       {TILES.map((tile) => (
         <div key={tile.label} className="flex flex-col gap-1 rounded-[9px] border px-3.5 py-3">
-          <dt className="text-[11px] text-muted-foreground">{tile.label}</dt>
+          <dt className="text-[13px] text-muted-foreground">{tile.label}</dt>
           <dd className={cn("font-heading text-xl leading-none font-bold tabular-nums", tile.className)}>
             {tile.statuses.reduce((sum, status) => sum + counts[status], 0).toLocaleString("en-US")}
           </dd>

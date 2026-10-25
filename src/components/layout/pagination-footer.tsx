@@ -15,7 +15,7 @@ interface PaginationFooterProps {
 }
 
 const BUTTON_CLASS =
-  "inline-flex min-h-8 items-center rounded-[7px] border border-[#dfe5e0] bg-card px-2.5 text-[11px] font-semibold text-[#536158] dark:border-input dark:text-foreground";
+  "inline-flex min-h-8 items-center rounded-[7px] border border-[#dfe5e0] bg-card px-2.5 text-[13px] font-semibold text-[#536158] dark:border-input dark:text-foreground";
 
 function PageLink({ href, children }: { href: string | null; children: string }) {
   if (!href) {
@@ -38,7 +38,7 @@ export function PaginationFooter({ from, to, total, noun, prevHref, nextHref }: 
   return (
     <nav
       aria-label="Pagination"
-      className="flex min-h-[54px] flex-wrap items-center justify-between gap-2 border-t border-[#e9edea] px-4 py-2 text-[11px] text-[#7d8981] dark:border-border dark:text-muted-foreground"
+      className="flex min-h-[54px] flex-wrap items-center justify-between gap-2 border-t border-[#e9edea] px-4 py-2 text-[13px] text-[#7d8981] dark:border-border dark:text-muted-foreground"
     >
       <span>
         Showing {format(from)}–{format(to)} of {format(total)} {noun}

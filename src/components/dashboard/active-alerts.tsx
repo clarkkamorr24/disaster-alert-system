@@ -86,7 +86,7 @@ export async function ActiveAlerts() {
                     <ChevronRight className="size-4" />
                   </span>
                 </div>
-                <div className="mt-auto flex items-center justify-between gap-2 border-t border-row-border pt-3 text-[11px] text-[#859087] dark:text-muted-foreground">
+                <div className="mt-auto flex items-center justify-between gap-2 border-t border-row-border pt-3 text-[13px] text-[#859087] dark:text-muted-foreground">
                   <span className="flex min-w-0 items-center gap-[5px]">
                     <MapIcon className="size-3.5 shrink-0" strokeWidth={1.75} aria-hidden="true" />
                     {zonesLabel(

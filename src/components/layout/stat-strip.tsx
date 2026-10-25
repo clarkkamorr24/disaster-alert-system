@@ -39,7 +39,7 @@ export function StatStripTile({ label, value, icon: Icon, tone }: StatStripItem)
       <strong className="font-heading text-[19px] leading-[1.1] font-bold text-[#203028] tabular-nums dark:text-foreground">
         {value}
       </strong>
-      <small className="col-start-2 row-start-2 text-[11px] text-[#7b8980] dark:text-muted-foreground">{label}</small>
+      <small className="col-start-2 row-start-2 text-[13px] text-[#7b8980] dark:text-muted-foreground">{label}</small>
     </div>
   );
 }

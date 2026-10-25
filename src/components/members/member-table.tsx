@@ -78,7 +78,7 @@ export function MemberTable({ rows }: { rows: MemberTableRow[] }) {
               <TableCell>
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 text-[11px] font-semibold",
+                    "inline-flex items-center gap-1.5 text-[13px] font-semibold",
                     member.isActive ? "text-status-clear" : "text-status-neutral",
                   )}
                 >

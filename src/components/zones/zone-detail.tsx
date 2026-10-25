@@ -84,7 +84,7 @@ function MemberTable({ members }: { members: ZoneMember[] }) {
               <TableCell>
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1.5 text-[11px] font-semibold",
+                    "inline-flex items-center gap-1.5 text-[13px] font-semibold",
                     member.isActive ? "text-status-clear" : "text-status-neutral",
                   )}
                 >
@@ -125,7 +125,7 @@ export async function ZoneDetail({ params }: ZoneDetailProps) {
           <Leaf className="size-[22px]" strokeWidth={1.75} aria-hidden="true" />
         </span>
         <div className="flex min-w-0 flex-col gap-1">
-          <p className="text-[11px] font-bold tracking-[.08em] text-muted-foreground uppercase">Farm zone</p>
+          <p className="text-[13px] font-bold tracking-[.08em] text-muted-foreground uppercase">Farm zone</p>
           <h1 className="font-heading text-[22px] leading-tight font-bold tracking-[-0.03em]">{zone.name}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2.5">
             <StatusPill tone={severityTone(worst)} pulse={isCriticalActive(worst)}>

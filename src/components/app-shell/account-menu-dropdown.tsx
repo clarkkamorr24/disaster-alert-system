@@ -97,7 +97,7 @@ export function AccountMenuDropdown({ name, email, initials }: AccountMenuProps)
         <OfficerAvatar initials={initials} className="size-9 shrink-0" />
         <span className="flex min-w-0 flex-1 flex-col group-data-[collapsible=icon]:hidden">
           <span className="truncate text-[13px] font-semibold text-white">{name}</span>
-          <span className="truncate text-[11px] text-[#91ae9a]">Association officer</span>
+          <span className="truncate text-[13px] text-[#91ae9a]">Association officer</span>
         </span>
         <ChevronUp className="size-4 shrink-0 group-data-[collapsible=icon]:hidden" aria-hidden="true" />
       </DropdownMenuTrigger>

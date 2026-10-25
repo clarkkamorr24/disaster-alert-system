@@ -38,7 +38,7 @@ export function BroadcastRows({ broadcasts, zoneNames, totalZones, className }: 
             </span>
             <span className="flex min-w-0 flex-[1_1_220px] flex-col gap-[3px]">
               <strong className="text-[13px] font-semibold">{broadcast.title}</strong>
-              <small className="text-[11px] text-[#879289] dark:text-muted-foreground">
+              <small className="text-[13px] text-[#879289] dark:text-muted-foreground">
                 {zonesLabel(zoneNames.get(broadcast.id) ?? [], totalZones)} · {formatManilaDateTime(broadcast.createdAt)}
               </small>
             </span>

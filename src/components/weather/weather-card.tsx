@@ -93,7 +93,7 @@ export async function WeatherCard({ zone }: WeatherCardProps) {
       </div>
       <div className="flex flex-col gap-3 p-[15px]">
         <RainfallBadge level={weather.rainfallLevel} className="bg-card text-xs" />
-        <p className="flex items-start gap-2 text-[11px] leading-[1.45] text-muted-foreground">
+        <p className="flex items-start gap-2 text-[13px] leading-[1.45] text-muted-foreground">
           <Info className="size-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
           <span>
             Updated {formatManilaDateTime(forecastTimeToDate(weather.fetchedAt))}. Weather is advisory: log an
