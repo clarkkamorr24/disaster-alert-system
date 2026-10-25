@@ -1,15 +1,21 @@
-import { MapPin, Plus } from "lucide-react";
+import { MapPin, Plus, SearchX } from "lucide-react";
 import Link from "next/link";
 
+import { SegmentedLinks } from "@/components/layout/segmented-control";
+import { SearchField, TableToolbar } from "@/components/layout/table-toolbar";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CurrentConditions } from "@/components/zones/current-conditions";
 import { FullMapDialog } from "@/components/zones/full-map-dialog";
 import { ZoneCard } from "@/components/zones/zone-card";
 import { ZoneMapClient } from "@/components/zones/zone-map-client";
+import { ZoneStatusFilter } from "@/components/zones/zone-status-filter";
+import { ZoneTable } from "@/components/zones/zone-table";
 import { requireOfficer } from "@/lib/auth/dal";
 import { formatManilaTime } from "@/lib/datetime";
+import { filterZones, parseZoneListFilters, zoneListHref } from "@/lib/zones/list-filters";
 import { loadZoneOverview } from "@/lib/zones/overview";
+import type { ZoneListFilters, ZoneMapPoint } from "@/types/zone";
 
 function overviewSubtitle(count: number, weatherUpdatedAt: Date | null): string {
   const zones = `${count} ${count === 1 ? "zone" : "zones"}`;
@@ -18,10 +24,72 @@ function overviewSubtitle(count: number, weatherUpdatedAt: Date | null): string 
 }
 
 /**
- * The zones page body: the map card and the Current conditions card, then a
- * card per zone. Loads the weather once for all three. Render inside `<Suspense>`.
+ * The zone list below the map: search, status filter, and Card / List view
+ * toggle, then the matching zones (or an empty state with Clear filters).
  */
-export async function ZonesOverview() {
+function ZoneList({ zones, filters }: { zones: ZoneMapPoint[]; filters: ZoneListFilters }) {
+  const shown = filterZones(zones, filters);
+
+  return (
+    <section aria-label="Zone list" className="mt-4 overflow-hidden rounded-xl border bg-card">
+      <TableToolbar>
+        <SearchField
+          action="/zones"
+          label="Search zones"
+          placeholder="Search zone name…"
+          defaultValue={filters.q}
+          keep={{ status: filters.status, view: filters.view === "card" ? null : filters.view }}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <ZoneStatusFilter filters={filters} />
+          <SegmentedLinks
+            label="Zone view"
+            links={(["card", "list"] as const).map((view) => ({
+              href: zoneListHref({ ...filters, view }),
+              label: view === "card" ? "Card view" : "List view",
+              current: filters.view === view,
+            }))}
+          />
+        </div>
+      </TableToolbar>
+      {shown.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 p-8 text-center">
+          <SearchX className="size-6 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
+          <p className="text-sm text-muted-foreground">No zones match these filters.</p>
+          <Link
+            href={zoneListHref({ q: "", status: null, view: filters.view })}
+            scroll={false}
+            className="inline-flex min-h-11 items-center text-xs font-bold text-link hover:text-primary-hover"
+          >
+            Clear filters
+          </Link>
+        </div>
+      ) : filters.view === "list" ? (
+        <ZoneTable zones={shown} showCoordinates />
+      ) : (
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 p-4">
+          {shown.map((zone) => (
+            <li key={zone.id} className="grid">
+              <ZoneCard zone={zone} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+interface ZonesOverviewProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+/**
+ * The zones page body: the map card and the Current conditions card for every
+ * zone, then the filterable zone list. Loads the weather once for all of them.
+ * Render inside `<Suspense>`.
+ */
+export async function ZonesOverview({ searchParams }: ZonesOverviewProps) {
+  const filters = parseZoneListFilters(await searchParams);
   await requireOfficer();
   const { zones, weather, weatherUpdatedAt } = await loadZoneOverview();
 
@@ -58,13 +126,7 @@ export async function ZonesOverview() {
           </Link>
         </div>
       ) : (
-        <ul className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
-          {zones.map((zone) => (
-            <li key={zone.id} className="grid">
-              <ZoneCard zone={zone} />
-            </li>
-          ))}
-        </ul>
+        <ZoneList zones={zones} filters={filters} />
       )}
     </>
   );
@@ -78,10 +140,13 @@ export function ZonesOverviewSkeleton() {
         <Skeleton className="h-[407px] min-w-0 flex-[1.8_1_480px] rounded-xl max-sm:basis-full" />
         <Skeleton className="h-[407px] min-w-0 flex-[.7_1_260px] rounded-xl" />
       </div>
-      <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
-        {Array.from({ length: 4 }, (_, i) => (
-          <Skeleton key={i} className="h-[165px] rounded-[11px]" />
-        ))}
+      <div className="mt-4 overflow-hidden rounded-xl border bg-card">
+        <div className="h-[65px] border-b" />
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3 p-4">
+          {Array.from({ length: 4 }, (_, i) => (
+            <Skeleton key={i} className="h-[165px] rounded-[11px]" />
+          ))}
+        </div>
       </div>
     </>
   );
