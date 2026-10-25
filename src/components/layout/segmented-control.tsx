@@ -2,9 +2,12 @@
 
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
+import { LayoutGrid, List } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "cn";
+
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const TRACK_CLASS = "inline-flex flex-wrap gap-0.5 self-start rounded-[9px] bg-[#eef2ef] p-[3px] dark:bg-muted";
 const SEGMENT_CLASS =
@@ -100,6 +103,48 @@ export function SegmentedLinks({ label, links }: { label: string; links: Segment
           {link.label}
           {link.count !== undefined && <span className="tabular-nums opacity-70">{link.count.toLocaleString("en-US")}</span>}
         </Link>
+      ))}
+    </nav>
+  );
+}
+
+const VIEW_OPTIONS = [
+  { view: "card", label: "Card view", Icon: LayoutGrid },
+  { view: "list", label: "List view", Icon: List },
+] as const;
+
+interface ViewToggleProps {
+  /** Names the toggle for screen readers, such as `Template view`. */
+  label: string;
+  view: "card" | "list";
+  /** Where each view's link goes, keeping the page's other params. */
+  hrefs: Record<"card" | "list", string>;
+}
+
+/**
+ * Icon-only {@link SegmentedLinks} for a Card / List view kept in the URL,
+ * with each view's name as a tooltip and `aria-label`.
+ */
+export function ViewToggle({ label, view, hrefs }: ViewToggleProps) {
+  return (
+    <nav aria-label={label} className={TRACK_CLASS}>
+      {VIEW_OPTIONS.map(({ view: option, label: optionLabel, Icon }) => (
+        <Tooltip key={option}>
+          <TooltipTrigger
+            render={
+              <Link
+                href={hrefs[option]}
+                scroll={false}
+                aria-label={optionLabel}
+                aria-current={view === option ? "page" : undefined}
+                className={cn(SEGMENT_CLASS, "w-11 justify-center px-0 sm:w-8", view === option && CHOSEN_CLASS)}
+              />
+            }
+          >
+            <Icon className="size-4" strokeWidth={1.75} aria-hidden="true" />
+          </TooltipTrigger>
+          <TooltipContent>{optionLabel}</TooltipContent>
+        </Tooltip>
       ))}
     </nav>
   );

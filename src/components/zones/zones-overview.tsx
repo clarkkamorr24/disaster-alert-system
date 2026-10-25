@@ -1,7 +1,7 @@
 import { MapPin, Plus, SearchX } from "lucide-react";
 import Link from "next/link";
 
-import { SegmentedLinks } from "@/components/layout/segmented-control";
+import { ViewToggle } from "@/components/layout/segmented-control";
 import { SearchField, TableToolbar } from "@/components/layout/table-toolbar";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,13 +42,10 @@ function ZoneList({ zones, filters }: { zones: ZoneMapPoint[]; filters: ZoneList
         />
         <div className="flex flex-wrap items-center gap-2">
           <ZoneStatusFilter filters={filters} />
-          <SegmentedLinks
+          <ViewToggle
             label="Zone view"
-            links={(["card", "list"] as const).map((view) => ({
-              href: zoneListHref({ ...filters, view }),
-              label: view === "card" ? "Card view" : "List view",
-              current: filters.view === view,
-            }))}
+            view={filters.view}
+            hrefs={{ card: zoneListHref({ ...filters, view: "card" }), list: zoneListHref({ ...filters, view: "list" }) }}
           />
         </div>
       </TableToolbar>

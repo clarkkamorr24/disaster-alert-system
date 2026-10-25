@@ -10,7 +10,7 @@ import { usageLabel } from "@/lib/templates/usage";
 
 const ANY_HAZARD_TINT = "bg-any-hazard-tile text-any-hazard-tile-foreground";
 
-interface TemplateCardProps {
+export interface TemplateCardProps {
   id: string;
   name: string;
   hazardType: HazardType | null;
@@ -19,7 +19,8 @@ interface TemplateCardProps {
   usageCount: number;
 }
 
-function TemplateTile({ hazardType }: { hazardType: HazardType | null }) {
+/** The template's hazard icon tile, or the message icon for "Any hazard". */
+export function TemplateTile({ hazardType }: { hazardType: HazardType | null }) {
   if (hazardType) return <HazardIconTile type={hazardType} className="size-[38px]" />;
   return (
     <span
@@ -27,6 +28,20 @@ function TemplateTile({ hazardType }: { hazardType: HazardType | null }) {
       className={cn("grid size-[38px] shrink-0 place-items-center rounded-[9px]", ANY_HAZARD_TINT)}
     >
       <MessageSquareText className="size-[18px]" strokeWidth={1.75} />
+    </span>
+  );
+}
+
+/** The hazard name chip in the hazard's tint, or "Any hazard". */
+export function TemplateTag({ hazardType }: { hazardType: HazardType | null }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap",
+        hazardType ? HAZARD_TINT_CLASSES[hazardType] : ANY_HAZARD_TINT,
+      )}
+    >
+      {hazardType ? HAZARD_TYPES[hazardType].label : "Any hazard"}
     </span>
   );
 }
@@ -44,14 +59,7 @@ export function TemplateCard({ id, name, hazardType, body, usageCount }: Templat
         <h2 className="min-w-0 font-heading text-[15px] font-bold tracking-[-0.02em] break-words text-title-foreground">
           {name}
         </h2>
-        <span
-          className={cn(
-            "rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap",
-            hazardType ? HAZARD_TINT_CLASSES[hazardType] : ANY_HAZARD_TINT,
-          )}
-        >
-          {hazardType ? HAZARD_TYPES[hazardType].label : "Any hazard"}
-        </span>
+        <TemplateTag hazardType={hazardType} />
       </div>
 
       <p className="mt-2.5 flex-1 text-[13px] leading-[1.65] break-words whitespace-pre-wrap text-muted-foreground">

@@ -11,7 +11,11 @@ export const metadata: Metadata = {
   title: "Templates · Mi-isi Disaster Alert",
 };
 
-export default function TemplatesPage() {
+export default function TemplatesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   return (
     <div className="w-full pb-8">
       <PageHeader
@@ -27,7 +31,7 @@ export default function TemplatesPage() {
       />
 
       <Suspense fallback={<TemplateListSkeleton />}>
-        <TemplateList />
+        <TemplateList searchParams={searchParams} />
       </Suspense>
     </div>
   );

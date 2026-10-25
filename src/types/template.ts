@@ -17,3 +17,21 @@ export interface TemplateFormValues {
   hazardType: HazardType | null;
   body: string;
 }
+
+export type TemplateView = "card" | "list";
+
+/** A hazard filter value: one hazard type, or `ANY` for templates that suit any hazard. */
+export type TemplateHazardFilter = HazardType | "ANY";
+
+/** `used` = sent in at least one broadcast. */
+export type TemplateUsageFilter = "used" | "unused";
+
+/** The templates page's search, filters, and view, as read from the URL. */
+export interface TemplateListFilters {
+  q: string;
+  /** `null` = every template. */
+  hazard: TemplateHazardFilter | null;
+  /** `null` = used or not. */
+  usage: TemplateUsageFilter | null;
+  view: TemplateView;
+}
