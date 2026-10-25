@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { MapPin } from "lucide-react";
 import { useRef, useState } from "react";
-import { AttributionControl, MapContainer, Marker, Popup, TileLayer, Tooltip } from "react-leaflet";
+import { AttributionControl, MapContainer, Marker, Polygon, Popup, TileLayer, Tooltip } from "react-leaflet";
 import { cn } from "cn";
 
 import { SeverityBadge } from "@/components/alerts/severity-badge";
@@ -15,7 +15,7 @@ import { BarangayFocus } from "@/components/zones/barangay-focus";
 import type { Severity } from "@/generated/prisma/enums";
 import { useRemountKey } from "@/hooks/use-remount-key";
 import { severityTone, type SeverityTone } from "@/lib/domain/status-tone";
-import { MI_ISI_BOUNDS, OSM_ATTRIBUTION, OSM_TILE_URL } from "@/lib/map";
+import { boundaryToLatLngs, MI_ISI_BOUNDS, OSM_ATTRIBUTION, OSM_TILE_URL } from "@/lib/map";
 import type { ZoneMapPoint } from "@/types/zone";
 
 const LEGEND: { severity: Severity | null; label: string; always: boolean }[] = [
@@ -143,8 +143,9 @@ function MapLegend({ zones }: ZoneMapProps) {
 /**
  * Barangay Mi-isi with every zone as a pin colored by its worst active alert
  * (gray when clear), its name, a legend, and a zone picker, on muted
- * OpenStreetMap tiles. Choosing a zone or tapping its pin highlights the pin
- * and opens its details. Fills its parent, which must be `relative`.
+ * OpenStreetMap tiles. Zones with a drawn boundary also show their area in
+ * their own color under the pin. Choosing a zone or tapping its pin or area
+ * highlights the pin and opens its details. Fills its parent, which must be `relative`.
  * Browser-only: load it through {@link ZoneMapClient}.
  */
 export default function ZoneMap({ zones }: ZoneMapProps) {
@@ -181,6 +182,18 @@ export default function ZoneMap({ zones }: ZoneMapProps) {
         <TileLayer url={OSM_TILE_URL} attribution={OSM_ATTRIBUTION} />
         <AttributionControl position="bottomleft" />
         <BarangayFocus />
+        {zones.map(
+          (zone) =>
+            zone.boundary && (
+              // Keyed by color: react-leaflet applies className only when the path is created.
+              <Polygon
+                key={`${zone.id}:${zone.color}`}
+                positions={boundaryToLatLngs(zone.boundary)}
+                className={`zone-area zone-area--${zone.color}`}
+                eventHandlers={{ click: () => markers.current.get(zone.id)?.openPopup() }}
+              />
+            ),
+        )}
         {zones.map((zone) => {
           const selected = zone.id === selectedId;
           return (

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
+import { Prisma } from "@/generated/prisma/client";
 import { requireOfficer } from "@/lib/auth/dal";
 import { prisma } from "@/lib/db";
 import { isUniqueViolation } from "@/lib/prisma-errors";
@@ -25,6 +26,8 @@ function parseZoneForm(formData: FormData): ParsedZone {
     description: String(formData.get("description") ?? ""),
     latitude: String(formData.get("latitude") ?? ""),
     longitude: String(formData.get("longitude") ?? ""),
+    boundary: String(formData.get("boundary") ?? ""),
+    color: String(formData.get("color") ?? ""),
   });
   if (parsed.success) return { success: true, data: parsed.data };
   return {
@@ -71,10 +74,15 @@ export async function updateZone(
   if (!parsed.success) return parsed.result;
 
   try {
-    // A cleared description is stored as null.
+    // A cleared description, boundary, or color is stored as null.
     await prisma.farmZone.update({
       where: { id },
-      data: { ...parsed.data, description: parsed.data.description ?? null },
+      data: {
+        ...parsed.data,
+        description: parsed.data.description ?? null,
+        boundary: parsed.data.boundary ?? Prisma.DbNull,
+        color: parsed.data.color ?? null,
+      },
     });
   } catch (error) {
     if (isUniqueViolation(error, "name")) return DUPLICATE_NAME;

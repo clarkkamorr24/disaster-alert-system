@@ -17,6 +17,9 @@ import { formatCoordinates } from "@/lib/domain/coordinates";
 import { SEVERITIES, worstSeverity } from "@/lib/domain/hazards";
 import { formatPhoneForDisplay } from "@/lib/domain/phone";
 import { isCriticalActive, severityTone } from "@/lib/domain/status-tone";
+import { toZoneColor } from "@/lib/zone-colors";
+import { getDefaultZoneColor } from "@/lib/zones/colors";
+import type { ZoneBoundary, ZoneFormValues } from "@/types/zone";
 
 interface ZoneDetailProps {
   params: Promise<{ id: string }>;
@@ -39,6 +42,8 @@ function loadZone(id: string) {
       description: true,
       latitude: true,
       longitude: true,
+      boundary: true,
+      color: true,
       members: {
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
         select: { id: true, firstName: true, lastName: true, phone: true, isActive: true },
@@ -100,10 +105,16 @@ export async function ZoneDetail({ params }: ZoneDetailProps) {
   const { id } = await params;
   await requireOfficer();
 
-  const zone = await loadZone(id);
+  const [zone, defaultColor] = await Promise.all([loadZone(id), getDefaultZoneColor(id)]);
   if (!zone) notFound();
 
-  const { members, alerts, ...values } = zone;
+  const { members, alerts, boundary, color, ...rest } = zone;
+  const values: ZoneFormValues = {
+    ...rest,
+    // Written only through zoneInputSchema, so a stored boundary is always a valid ZoneBoundary.
+    boundary: boundary as ZoneBoundary | null,
+    color: color ? toZoneColor(color) : defaultColor,
+  };
   const worst = worstSeverity(alerts.map((alert) => alert.severity));
   const activeCount = members.filter((member) => member.isActive).length;
 
@@ -131,7 +142,7 @@ export async function ZoneDetail({ params }: ZoneDetailProps) {
         <DetailCard title="Zone details">
           {/* Keyed so a saved edit re-mounts the form with the new values. */}
           <ZoneForm
-            key={`${values.name}|${values.description}|${values.latitude}|${values.longitude}`}
+            key={`${values.name}|${values.description}|${values.latitude}|${values.longitude}|${values.color}|${JSON.stringify(values.boundary)}`}
             zone={values}
           />
         </DetailCard>

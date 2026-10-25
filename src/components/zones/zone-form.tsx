@@ -1,7 +1,5 @@
 "use client";
 
-import { MapPin } from "lucide-react";
-import dynamic from "next/dynamic";
 import { useActionState, useState } from "react";
 import { toast } from "sonner";
 
@@ -9,22 +7,20 @@ import { createZone, updateZone } from "@/actions/zones";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { isInMiIsi, OUTSIDE_MI_ISI_MESSAGE } from "@/lib/map";
+import { ZoneColorPicker } from "@/components/zones/zone-color-picker";
+import { ZoneMapField } from "@/components/zones/zone-map-field";
+import { boundaryToLatLngs, latLngsToBoundary } from "@/lib/map";
 import { isRedirectError } from "@/lib/redirect-error";
+import { ZONE_COLOR_KEYS, type ZoneColor } from "@/lib/zone-colors";
 import type { ActionResult } from "@/types/action-result";
 import type { ZoneFormValues } from "@/types/zone";
-
-// Leaflet touches `window` on import, so the picker only loads in the browser.
-const ZoneLocationPicker = dynamic(() => import("./zone-location-picker"), {
-  ssr: false,
-  loading: () => <Skeleton className="h-[280px] rounded-xl" />,
-});
 
 interface ZoneFormProps {
   /** The zone to edit; omit to create a new one. */
   zone?: ZoneFormValues;
+  /** The color a new zone starts on. */
+  defaultColor?: ZoneColor;
 }
 
 interface FieldValues {
@@ -65,7 +61,7 @@ function initialValues(zone: ZoneFormValues | undefined): FieldValues {
   };
 }
 
-export function ZoneForm({ zone }: ZoneFormProps) {
+export function ZoneForm({ zone, defaultColor }: ZoneFormProps) {
   async function submit(prev: ZoneFormState | null, formData: FormData): Promise<ZoneFormState> {
     let result: ActionResult;
     try {
@@ -89,14 +85,10 @@ export function ZoneForm({ zone }: ZoneFormProps) {
   // Controlled so Pick on map can fill them; React's form reset leaves controlled inputs alone.
   const [latitude, setLatitude] = useState(() => initialValues(zone).latitude);
   const [longitude, setLongitude] = useState(() => initialValues(zone).longitude);
-  const [showPicker, setShowPicker] = useState(false);
-  const [pickedOutside, setPickedOutside] = useState(false);
+  const [corners, setCorners] = useState(() => (zone?.boundary ? boundaryToLatLngs(zone.boundary) : null));
+  const [color, setColor] = useState<ZoneColor>(zone?.color ?? defaultColor ?? ZONE_COLOR_KEYS[0]);
 
-  function pick(lat: number, lng: number) {
-    // A tap outside the barangay places nothing; the save would be rejected anyway.
-    const inside = isInMiIsi(lat, lng);
-    setPickedOutside(!inside);
-    if (!inside) return;
+  function setCenter(lat: number, lng: number) {
     setLatitude(lat.toFixed(6));
     setLongitude(lng.toFixed(6));
   }
@@ -105,6 +97,7 @@ export function ZoneForm({ zone }: ZoneFormProps) {
   const descriptionError = fieldErrors?.description?.[0];
   const latitudeError = fieldErrors?.latitude?.[0];
   const longitudeError = fieldErrors?.longitude?.[0];
+  const boundaryError = fieldErrors?.boundary?.[0];
 
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>
@@ -146,7 +139,7 @@ export function ZoneForm({ zone }: ZoneFormProps) {
       </div>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="sr-only">Center of the zone</legend>
+        <legend className="sr-only">Center and boundary of the zone</legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-2">
             <Label htmlFor="zone-latitude">Latitude</Label>
@@ -201,29 +194,33 @@ export function ZoneForm({ zone }: ZoneFormProps) {
         <p id="zone-coordinates-help" className="text-sm text-muted-foreground">
           Example: 13.1953, 123.6886
         </p>
-        <Button
-          type="button"
-          variant="outline"
-          aria-expanded={showPicker}
-          onClick={() => setShowPicker((shown) => !shown)}
-          className="h-11 self-start px-4 text-[13px]"
-        >
-          <MapPin data-icon="inline-start" />
-          {showPicker ? "Hide map" : "Pick on map"}
-        </Button>
-        {showPicker && (
-          // isolate keeps Leaflet's z-indexes (400+) below the mobile sidebar sheet (z-50).
-          <div className="isolate flex flex-col gap-2">
-            <ZoneLocationPicker point={toPoint(latitude, longitude)} onPick={pick} />
-            <p className="text-sm text-muted-foreground">
-              Tap the center of the zone, inside the dashed Barangay Mi-isi boundary, to fill in the coordinates.
-            </p>
-            <p role="status" className="text-sm text-destructive empty:hidden">
-              {pickedOutside ? OUTSIDE_MI_ISI_MESSAGE : null}
-            </p>
-          </div>
-        )}
+        <ZoneMapField
+          point={toPoint(latitude, longitude)}
+          onCenterChange={setCenter}
+          corners={corners}
+          onCornersChange={setCorners}
+          color={color}
+          error={boundaryError}
+        />
+        {/* Hidden inputs keep their value through React's form reset. */}
+        <input type="hidden" name="boundary" value={corners ? JSON.stringify(latLngsToBoundary(corners)) : ""} />
       </fieldset>
+
+      <div className="flex flex-col gap-2">
+        <span id="zone-color-label" className="text-sm leading-none font-medium">
+          Area color
+        </span>
+        <ZoneColorPicker
+          value={color}
+          onChange={setColor}
+          labelledBy="zone-color-label"
+          describedBy="zone-color-help"
+        />
+        <p id="zone-color-help" className="text-sm text-muted-foreground">
+          Fills the drawn boundary on the map. Alert severity is still shown by the pin.
+        </p>
+        <input type="hidden" name="color" value={color} />
+      </div>
 
       <Button type="submit" disabled={pending} className="h-11 self-start px-5 text-[13px]">
         {pending ? "Saving…" : zone ? "Save zone" : "Add zone"}

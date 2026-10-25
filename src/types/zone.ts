@@ -1,5 +1,12 @@
 import type { Severity } from "@/generated/prisma/enums";
+import type { ZoneColor } from "@/lib/zone-colors";
 import type { RainfallLevel } from "@/types/weather";
+
+/** A purok's drawn area as stored in `FarmZone.boundary`: a GeoJSON Polygon with one closed `[lng, lat]` ring. */
+export interface ZoneBoundary {
+  type: "Polygon";
+  coordinates: [number, number][][];
+}
 
 /** A saved zone, as the edit form needs it. */
 export interface ZoneFormValues {
@@ -8,6 +15,9 @@ export interface ZoneFormValues {
   description: string | null;
   latitude: number;
   longitude: number;
+  boundary: ZoneBoundary | null;
+  /** A `ZONE_COLORS` key. */
+  color: ZoneColor;
 }
 
 /** Which active alerts affect a zone, and the worst severity among them. */
@@ -25,6 +35,9 @@ export interface ZoneMapPoint {
   name: string;
   latitude: number;
   longitude: number;
+  /** `null` when the zone is shown as a pin only. */
+  boundary: ZoneBoundary | null;
+  color: ZoneColor;
   /** `null` when no active alert affects the zone. */
   worstSeverity: Severity | null;
   activeAlertTitles: string[];

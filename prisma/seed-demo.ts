@@ -8,11 +8,22 @@ if (process.env.SMS_DRIVER !== "fake") {
 
 const prisma = createSeedClient();
 
-// Placeholder coordinates inside Barangay Mi-isi for the demo, not the real purok centers.
+/** A square demo area centered on a point, as the GeoJSON Polygon `FarmZone.boundary` stores. */
+function squareAround(latitude: number, longitude: number, half = 0.003) {
+  const ring = [
+    [longitude - half, latitude - half],
+    [longitude + half, latitude - half],
+    [longitude + half, latitude + half],
+    [longitude - half, latitude + half],
+  ];
+  return { type: "Polygon", coordinates: [[...ring, ring[0]]] };
+}
+
+// Placeholder centers and square areas inside Barangay Mi-isi for the demo, not the real puroks.
 const DEMO_ZONES = [
-  { name: "Purok 1", latitude: 13.188, longitude: 123.685 },
-  { name: "Purok 2", latitude: 13.2, longitude: 123.692 },
-  { name: "Purok 3", latitude: 13.215, longitude: 123.695 },
+  { name: "Purok 1", latitude: 13.188, longitude: 123.685, boundary: squareAround(13.188, 123.685), color: "sky" },
+  { name: "Purok 2", latitude: 13.2, longitude: 123.692, boundary: squareAround(13.2, 123.692), color: "violet" },
+  { name: "Purok 3", latitude: 13.215, longitude: 123.695, boundary: squareAround(13.215, 123.695), color: "pink" },
 ];
 
 // The last number ends in 0000, which the fake SMS driver marks Skipped.
@@ -38,9 +49,9 @@ function toCanonicalPhone(phone: string): string {
 async function main(): Promise<void> {
   const zoneIds = new Map<string, string>();
   for (const zone of DEMO_ZONES) {
-    // Coordinates are updated too, so a rerun moves demo zones placed outside Mi-isi before.
-    const { latitude, longitude } = zone;
-    const saved = await prisma.farmZone.upsert({ where: { name: zone.name }, update: { latitude, longitude }, create: zone });
+    // Location and area are updated too, so a rerun moves demo zones placed outside Mi-isi before.
+    const { name, ...location } = zone;
+    const saved = await prisma.farmZone.upsert({ where: { name }, update: location, create: zone });
     zoneIds.set(zone.name, saved.id);
   }
   console.log(`Zones: ${DEMO_ZONES.length} upserted`);
