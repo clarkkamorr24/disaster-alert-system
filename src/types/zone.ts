@@ -51,3 +51,17 @@ export interface ZoneMapPoint {
   /** The current weather in plain words, such as `Rain`. */
   condition: string | null;
 }
+
+/** How the zones page lists zones. */
+export type ZoneView = "card" | "list";
+
+/** A zone's status for the zones filter: its worst active severity, or `CLEAR` without active alerts. */
+export type ZoneListStatus = Severity | "CLEAR";
+
+/** The zones page's search, status filter, and view, as read from the URL. */
+export interface ZoneListFilters {
+  q: string;
+  /** `null` = every status. */
+  status: ZoneListStatus | null;
+  view: ZoneView;
+}

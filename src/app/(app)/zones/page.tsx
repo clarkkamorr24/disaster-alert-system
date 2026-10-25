@@ -11,7 +11,11 @@ export const metadata: Metadata = {
   title: "Zones · Mi-isi Disaster Alert",
 };
 
-export default function ZonesPage() {
+export default function ZonesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   return (
     <div className="w-full pb-8">
       <PageHeader
@@ -27,7 +31,7 @@ export default function ZonesPage() {
       />
 
       <Suspense fallback={<ZonesOverviewSkeleton />}>
-        <ZonesOverview />
+        <ZonesOverview searchParams={searchParams} />
       </Suspense>
     </div>
   );
