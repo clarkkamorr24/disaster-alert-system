@@ -445,6 +445,11 @@ body .leaflet-container {
   box-shadow: 0 0 0 3px var(--pin-color);
 }
 
+/* While any zone has an active alert, clear pins step back so the alerts stand out. */
+.zone-map--alerts .zone-pin--clear:not(.zone-pin--selected) {
+  opacity: 0.5;
+}
+
 /* Barangay Mi-isi: everything outside it dimmed, its boundary outlined. */
 .leaflet-container .barangay-mask {
   fill: var(--scrim);
