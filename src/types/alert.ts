@@ -1,4 +1,5 @@
 import type { HazardType, Severity } from "@/generated/prisma/enums";
+import type { PageSize } from "@/lib/pagination";
 
 /** Which alerts the alert log shows. */
 export type AlertTab = "all" | "active" | "resolved";
@@ -13,6 +14,8 @@ export interface AlertListFilters {
   severity: Severity | null;
   /** 1-based. */
   page: number;
+  /** Rows per page, one of `PAGE_SIZES`. */
+  size: PageSize;
 }
 
 /** What the New alert form sends: the alert, and the SMS when `send` is true. */

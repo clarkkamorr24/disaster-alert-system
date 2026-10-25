@@ -44,8 +44,8 @@ async function loadMembers(filters: MemberListFilters) {
     prisma.member.findMany({
       where,
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      skip: (filters.page - 1) * MEMBERS_PER_PAGE,
-      take: MEMBERS_PER_PAGE,
+      skip: (filters.page - 1) * filters.size,
+      take: filters.size,
       select: {
         id: true,
         firstName: true,
@@ -94,7 +94,7 @@ function EmptyState({ filters, pastEnd }: { filters: MemberListFilters; pastEnd:
 
 /**
  * The member registry: a stat strip, then a card with search, Import CSV, zone
- * and status filters, the table, and 50 per page. Render inside `<Suspense>`.
+ * and status filters, the table, and pagination (10 per page unless `?size=` says otherwise). Render inside `<Suspense>`.
  */
 export async function MemberList({ searchParams }: MemberListProps) {
   const filters = parseMemberListFilters(await searchParams);
@@ -102,8 +102,8 @@ export async function MemberList({ searchParams }: MemberListProps) {
 
   const [stats, zones, { rows, total }] = await Promise.all([loadStats(), getZoneOptions(), loadMembers(filters)]);
 
-  const skip = (filters.page - 1) * MEMBERS_PER_PAGE;
-  const lastPage = Math.max(1, Math.ceil(total / MEMBERS_PER_PAGE));
+  const skip = (filters.page - 1) * filters.size;
+  const lastPage = Math.max(1, Math.ceil(total / filters.size));
   const pastEnd = total > 0 && filters.page > lastPage;
 
   return (
@@ -116,7 +116,11 @@ export async function MemberList({ searchParams }: MemberListProps) {
             label="Search members"
             placeholder="Search name or phone…"
             defaultValue={filters.q}
-            keep={{ zone: filters.zoneId ?? null, status: filters.status === "active" ? null : filters.status }}
+            keep={{
+              zone: filters.zoneId ?? null,
+              status: filters.status === "active" ? null : filters.status,
+              size: filters.size === MEMBERS_PER_PAGE ? null : String(filters.size),
+            }}
           />
           <div className="flex flex-wrap gap-2">
             <Link
@@ -137,6 +141,10 @@ export async function MemberList({ searchParams }: MemberListProps) {
           noun={total === 1 ? "member" : "members"}
           prevHref={filters.page > 1 ? memberListHref(filters, Math.min(filters.page - 1, lastPage)) : null}
           nextHref={skip + rows.length < total ? memberListHref(filters, filters.page + 1) : null}
+          page={filters.page}
+          pageCount={lastPage}
+          size={filters.size}
+          sizeHref={(size) => memberListHref({ ...filters, size }, 1)}
         />
       </div>
     </>

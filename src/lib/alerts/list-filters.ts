@@ -1,10 +1,11 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { HazardType, Severity } from "@/generated/prisma/enums";
 import { HAZARD_TYPES } from "@/lib/domain/hazards";
+import { type PageSize, parsePageSize } from "@/lib/pagination";
 import type { AlertListFilters, AlertTab } from "@/types/alert";
 
-/** How many alerts the log shows per page. */
-export const ALERTS_PER_PAGE = 25;
+/** How many alerts the log shows per page unless `?size=` picks another. */
+export const ALERTS_PER_PAGE: PageSize = 10;
 
 const TABS: readonly AlertTab[] = ["all", "active", "resolved"];
 
@@ -19,9 +20,9 @@ function oneOf<T extends string>(value: string, allowed: readonly T[]): T | null
 }
 
 /**
- * Reads the alert log's tab, search, filters, and page from URL search
- * params. Unknown or missing values fall back to the defaults: the Active
- * tab, no search, every hazard and severity, page 1.
+ * Reads the alert log's tab, search, filters, page, and page size from URL
+ * search params. Unknown or missing values fall back to the defaults: the
+ * Active tab, no search, every hazard and severity, page 1, 10 per page.
  *
  * @param params - The awaited `searchParams` of `/alerts`.
  * @returns Filters that are always safe to query with.
@@ -34,6 +35,7 @@ export function parseAlertListFilters(params: SearchParams): AlertListFilters {
     hazard: oneOf(first(params.hazard), Object.values(HazardType)),
     severity: oneOf(first(params.severity), Object.values(Severity)),
     page: Number.isInteger(page) && page > 0 ? page : 1,
+    size: parsePageSize(first(params.size), ALERTS_PER_PAGE),
   };
 }
 
@@ -92,6 +94,7 @@ export function alertListHref(filters: AlertListFilters, page = filters.page): s
   if (filters.q) params.set("q", filters.q);
   if (filters.hazard) params.set("hazard", filters.hazard);
   if (filters.severity) params.set("severity", filters.severity);
+  if (filters.size !== ALERTS_PER_PAGE) params.set("size", String(filters.size));
   if (page > 1) params.set("page", String(page));
   const query = params.toString();
   return query ? `/alerts?${query}` : "/alerts";

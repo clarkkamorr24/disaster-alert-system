@@ -1,3 +1,5 @@
+import type { PageSize } from "@/lib/pagination";
+
 /** A saved member, as the edit form needs it. */
 export interface MemberFormValues {
   id: string;
@@ -26,6 +28,8 @@ export interface MemberListFilters {
   status: MemberStatusFilter;
   /** 1-based. */
   page: number;
+  /** Rows per page, one of `PAGE_SIZES`. */
+  size: PageSize;
 }
 
 /** A row of a member CSV that can't be imported. */

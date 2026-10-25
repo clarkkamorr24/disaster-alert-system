@@ -1,8 +1,9 @@
 import type { Prisma } from "@/generated/prisma/client";
+import { type PageSize, parsePageSize } from "@/lib/pagination";
 import type { MemberListFilters, MemberStatusFilter } from "@/types/member";
 
 /** How many members the list shows per page. */
-export const MEMBERS_PER_PAGE = 50;
+export const MEMBERS_PER_PAGE: PageSize = 10;
 
 const STATUSES: readonly MemberStatusFilter[] = ["active", "inactive", "all"];
 
@@ -27,6 +28,7 @@ export function parseMemberListFilters(params: SearchParams): MemberListFilters 
     zoneId: first(params.zone) || undefined,
     status: STATUSES.includes(status) ? status : "active",
     page: Number.isInteger(page) && page > 0 ? page : 1,
+    size: parsePageSize(first(params.size), MEMBERS_PER_PAGE),
   };
 }
 
@@ -88,6 +90,7 @@ export function memberListHref(filters: MemberListFilters, page = filters.page):
   if (filters.q) params.set("q", filters.q);
   if (filters.zoneId) params.set("zone", filters.zoneId);
   if (filters.status !== "active") params.set("status", filters.status);
+  if (filters.size !== MEMBERS_PER_PAGE) params.set("size", String(filters.size));
   if (page > 1) params.set("page", String(page));
   const query = params.toString();
   return query ? `/members?${query}` : "/members";

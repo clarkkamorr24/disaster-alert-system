@@ -1,4 +1,4 @@
-import { CircleAlert, CircleCheck, CreditCard, MessageSquareText, Send } from "lucide-react";
+import { CircleAlert, CircleCheck, CreditCard, MessageSquareText } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -7,7 +7,6 @@ import { BroadcastTable } from "@/components/broadcast/broadcast-table";
 import { PaginationFooter } from "@/components/layout/pagination-footer";
 import { StatStrip, StatStripTile, StatStripTileSkeleton } from "@/components/layout/stat-strip";
 import { SearchField, TableToolbar } from "@/components/layout/table-toolbar";
-import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOfficer } from "@/lib/auth/dal";
 import {
@@ -63,7 +62,7 @@ async function CreditTile() {
 async function loadBroadcasts(filters: BroadcastListFilters) {
   const where = broadcastListWhere(filters);
   const [rows, total, totalZones] = await Promise.all([
-    loadBroadcastSummaries(where, (filters.page - 1) * BROADCASTS_PER_PAGE, BROADCASTS_PER_PAGE),
+    loadBroadcastSummaries(where, (filters.page - 1) * filters.size, filters.size),
     prisma.broadcast.count({ where }),
     prisma.farmZone.count(),
   ]);
@@ -92,14 +91,9 @@ function EmptyState({ filters, pastEnd }: { filters: BroadcastListFilters; pastE
       <p className="text-sm text-muted-foreground">
         {filtered ? "No broadcasts match your search." : "No broadcasts yet."}
       </p>
-      {filtered ? (
+      {filtered && (
         <Link href="/broadcasts" className={LINK_CLASS}>
           Clear filters
-        </Link>
-      ) : (
-        <Link href="/broadcasts/new" className={buttonVariants({ className: "mt-1 h-11 gap-2 px-4 text-[13px]" })}>
-          <Send data-icon="inline-start" />
-          New broadcast
         </Link>
       )}
     </div>
@@ -108,7 +102,7 @@ function EmptyState({ filters, pastEnd }: { filters: BroadcastListFilters; pastE
 
 /**
  * The broadcast history: a stat strip, then a card with search, the kind
- * filter, the table, and 25 per page. Render inside `<Suspense>`.
+ * filter, the table, and pagination (10 per page unless `?size=` says otherwise). Render inside `<Suspense>`.
  */
 export async function BroadcastList({ searchParams }: BroadcastListProps) {
   const params = await searchParams;
@@ -118,8 +112,8 @@ export async function BroadcastList({ searchParams }: BroadcastListProps) {
   const now = new Date();
   const [stats, { rows, total, totalZones, zoneNames }] = await Promise.all([loadStats(), loadBroadcasts(filters)]);
 
-  const skip = (filters.page - 1) * BROADCASTS_PER_PAGE;
-  const lastPage = Math.max(1, Math.ceil(total / BROADCASTS_PER_PAGE));
+  const skip = (filters.page - 1) * filters.size;
+  const lastPage = Math.max(1, Math.ceil(total / filters.size));
   const pastEnd = total > 0 && filters.page > lastPage;
 
   return (
@@ -136,7 +130,10 @@ export async function BroadcastList({ searchParams }: BroadcastListProps) {
             label="Search broadcasts"
             placeholder="Search broadcasts…"
             defaultValue={filters.q}
-            keep={{ kind: filters.kind === "all" ? null : filters.kind }}
+            keep={{
+              kind: filters.kind === "all" ? null : filters.kind,
+              size: filters.size === BROADCASTS_PER_PAGE ? null : String(filters.size),
+            }}
           />
           <BroadcastFilterPopover filters={filters} />
         </TableToolbar>
@@ -152,6 +149,10 @@ export async function BroadcastList({ searchParams }: BroadcastListProps) {
           noun={total === 1 ? "broadcast" : "broadcasts"}
           prevHref={filters.page > 1 ? broadcastListHref(filters, Math.min(filters.page - 1, lastPage)) : null}
           nextHref={skip + rows.length < total ? broadcastListHref(filters, filters.page + 1) : null}
+          page={filters.page}
+          pageCount={lastPage}
+          size={filters.size}
+          sizeHref={(size) => broadcastListHref({ ...filters, size }, 1)}
         />
       </div>
     </>

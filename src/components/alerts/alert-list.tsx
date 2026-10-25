@@ -54,8 +54,8 @@ async function loadAlerts(filters: AlertListFilters) {
     prisma.hazardAlert.findMany({
       where: alertListWhere(filters),
       orderBy: ORDER[filters.tab],
-      skip: (filters.page - 1) * ALERTS_PER_PAGE,
-      take: ALERTS_PER_PAGE,
+      skip: (filters.page - 1) * filters.size,
+      take: filters.size,
       select: {
         id: true,
         title: true,
@@ -111,7 +111,7 @@ function EmptyState({ filters, pastEnd }: { filters: AlertListFilters; pastEnd: 
 
 /**
  * The alert log: a stat strip, then a card with All / Active / Resolved tabs,
- * search, filters, the table, and 25 per page. Render inside `<Suspense>`.
+ * search, filters, the table, and pagination (10 per page unless `?size=` says otherwise). Render inside `<Suspense>`.
  */
 export async function AlertList({ searchParams }: AlertListProps) {
   const params = await searchParams;
@@ -121,8 +121,8 @@ export async function AlertList({ searchParams }: AlertListProps) {
   const now = new Date();
   const [stats, { rows, total, counts, totalZones }] = await Promise.all([loadStats(now), loadAlerts(filters)]);
 
-  const skip = (filters.page - 1) * ALERTS_PER_PAGE;
-  const lastPage = Math.max(1, Math.ceil(total / ALERTS_PER_PAGE));
+  const skip = (filters.page - 1) * filters.size;
+  const lastPage = Math.max(1, Math.ceil(total / filters.size));
   const pastEnd = total > 0 && filters.page > lastPage;
   const tabs = (Object.keys(TAB_LABELS) as AlertTab[]).map((tab) => ({
     href: alertListHref({ ...filters, tab, page: 1 }),
@@ -142,7 +142,12 @@ export async function AlertList({ searchParams }: AlertListProps) {
             label="Search alerts"
             placeholder="Search alerts…"
             defaultValue={filters.q}
-            keep={{ tab: filters.tab === "active" ? null : filters.tab, hazard: filters.hazard, severity: filters.severity }}
+            keep={{
+              tab: filters.tab === "active" ? null : filters.tab,
+              hazard: filters.hazard,
+              severity: filters.severity,
+              size: filters.size === ALERTS_PER_PAGE ? null : String(filters.size),
+            }}
           />
           <AlertFilterPopover filters={filters} />
         </TableToolbar>
@@ -158,6 +163,10 @@ export async function AlertList({ searchParams }: AlertListProps) {
           noun={total === 1 ? "alert" : "alerts"}
           prevHref={filters.page > 1 ? alertListHref(filters, Math.min(filters.page - 1, lastPage)) : null}
           nextHref={skip + rows.length < total ? alertListHref(filters, filters.page + 1) : null}
+          page={filters.page}
+          pageCount={lastPage}
+          size={filters.size}
+          sizeHref={(size) => alertListHref({ ...filters, size }, 1)}
         />
       </div>
     </>

@@ -5,7 +5,7 @@ import { broadcastTitle } from "@/lib/broadcast/title";
 import { prisma } from "@/lib/db";
 import { formatPhoneForDisplay } from "@/lib/domain/phone";
 import { getEnv } from "@/lib/env";
-import { memberListWhere } from "@/lib/members/list-filters";
+import { MEMBERS_PER_PAGE, memberListWhere } from "@/lib/members/list-filters";
 import { searchQuerySchema } from "@/lib/validation/search";
 import type { ActionResult } from "@/types/action-result";
 import type { SearchResults } from "@/types/search";
@@ -30,7 +30,7 @@ export async function searchEverything(query: string): Promise<ActionResult<Sear
       prisma.member.findMany({
         where: {
           OR: [
-            memberListWhere({ q, zoneId: undefined, status: "all", page: 1 }),
+            memberListWhere({ q, zoneId: undefined, status: "all", page: 1, size: MEMBERS_PER_PAGE }),
             { zone: { name: contains } },
           ],
         },

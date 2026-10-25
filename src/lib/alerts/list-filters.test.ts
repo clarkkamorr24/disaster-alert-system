@@ -4,7 +4,7 @@ import type { AlertListFilters } from "@/types/alert";
 
 import { alertListHref, alertListWhere, parseAlertListFilters } from "./list-filters";
 
-const DEFAULTS: AlertListFilters = { tab: "active", q: "", hazard: null, severity: null, page: 1 };
+const DEFAULTS: AlertListFilters = { tab: "active", q: "", hazard: null, severity: null, page: 1, size: 10 };
 
 describe("parseAlertListFilters", () => {
   it("falls back to active alerts on page 1 without filters", () => {
@@ -13,13 +13,13 @@ describe("parseAlertListFilters", () => {
 
   it("reads trimmed values", () => {
     expect(
-      parseAlertListFilters({ tab: "all", q: " mayon ", hazard: "ASHFALL", severity: "CRITICAL", page: "2" }),
-    ).toEqual({ tab: "all", q: "mayon", hazard: "ASHFALL", severity: "CRITICAL", page: 2 });
+      parseAlertListFilters({ tab: "all", q: " mayon ", hazard: "ASHFALL", severity: "CRITICAL", page: "2", size: "100" }),
+    ).toEqual({ tab: "all", q: "mayon", hazard: "ASHFALL", severity: "CRITICAL", page: 2, size: 100 });
   });
 
   it("ignores an invalid tab, hazard, severity, or page", () => {
     expect(
-      parseAlertListFilters({ tab: "deleted", hazard: "METEOR", severity: "extreme", page: "-1" }),
+      parseAlertListFilters({ tab: "deleted", hazard: "METEOR", severity: "extreme", page: "-1", size: "30" }),
     ).toEqual(DEFAULTS);
     expect(parseAlertListFilters({ severity: "critical" }).severity).toBeNull();
   });
@@ -60,8 +60,13 @@ describe("alertListHref", () => {
   });
 
   it("keeps the tab, search, and filters across pages", () => {
-    const filters: AlertListFilters = { tab: "all", q: "ash fall", hazard: "ASHFALL", severity: "HIGH", page: 3 };
+    const filters: AlertListFilters = { tab: "all", q: "ash fall", hazard: "ASHFALL", severity: "HIGH", page: 3, size: 10 };
     expect(alertListHref(filters)).toBe("/alerts?tab=all&q=ash+fall&hazard=ASHFALL&severity=HIGH&page=3");
     expect(alertListHref(filters, 1)).toBe("/alerts?tab=all&q=ash+fall&hazard=ASHFALL&severity=HIGH");
+  });
+
+  it("keeps a page size other than the default", () => {
+    expect(alertListHref({ ...DEFAULTS, size: 25, page: 2 })).toBe("/alerts?size=25&page=2");
+    expect(alertListHref({ ...DEFAULTS, tab: "resolved", size: 100 }, 1)).toBe("/alerts?tab=resolved&size=100");
   });
 });
