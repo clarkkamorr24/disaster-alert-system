@@ -4,8 +4,8 @@ import { useActionState } from "react";
 import { toast } from "sonner";
 
 import { changePassword } from "@/actions/account";
+import { PasswordInput } from "@/components/settings/password-input";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PASSWORD_MIN_LENGTH } from "@/lib/validation/account";
 import type { ActionResult } from "@/types/action-result";
@@ -35,10 +35,9 @@ export function ChangePasswordForm() {
         return (
           <div key={field.name} className="flex flex-col gap-2">
             <Label htmlFor={id}>{field.label}</Label>
-            <Input
+            <PasswordInput
               id={id}
               name={field.name}
-              type="password"
               autoComplete={field.autoComplete}
               required
               aria-invalid={error ? true : undefined}

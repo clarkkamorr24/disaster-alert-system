@@ -1,11 +1,11 @@
 "use client";
 
-import { startTransition, useActionState, useRef, useState, type FormEvent } from "react";
+import { startTransition, useActionState, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { cn } from "cn";
 
 import { createTemplate, updateTemplate } from "@/actions/templates";
-import { ANY_HAZARD, HazardSelect, PlaceholderChips, type HazardChoice } from "@/components/templates/template-fields";
+import { ANY_HAZARD, HazardSelect, type HazardChoice } from "@/components/templates/template-fields";
 import { TemplatePreview } from "@/components/templates/template-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,7 +65,6 @@ export function TemplateForm({ prefix, senderId, template }: TemplateFormProps) 
   const [state, formAction, pending] = useActionState(submit, null);
   const [hazard, setHazard] = useState<HazardChoice>(template?.hazardType ?? ANY_HAZARD);
   const [body, setBody] = useState(template?.body ?? "");
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   const fieldErrors = state && !state.success ? state.fieldErrors : undefined;
   const error = (field: string) => fieldErrors?.[field]?.[0];
@@ -73,20 +72,6 @@ export function TemplateForm({ prefix, senderId, template }: TemplateFormProps) 
   const message = withPrefix(body.trim(), prefix);
   const credits = estimateCredits(message);
   const tooLong = message.length > SMS_MAX_CHARS;
-
-  function insertPlaceholder(name: string) {
-    const textarea = bodyRef.current;
-    if (!textarea) return;
-    const token = `{${name}}`;
-    const { selectionStart, selectionEnd, value } = textarea;
-    setBody(value.slice(0, selectionStart) + token + value.slice(selectionEnd));
-    const caret = selectionStart + token.length;
-    // Wait for React to write the new value before placing the caret after the token.
-    requestAnimationFrame(() => {
-      textarea.focus();
-      textarea.setSelectionRange(caret, caret);
-    });
-  }
 
   // Submitting through onSubmit skips React's automatic form reset, so every
   // field keeps what was entered after a rejected save. The hazard lives in
@@ -141,9 +126,7 @@ export function TemplateForm({ prefix, senderId, template }: TemplateFormProps) 
           <Label htmlFor="template-body" className="text-sm font-semibold">
             Message
           </Label>
-          <PlaceholderChips onInsert={insertPlaceholder} />
           <Textarea
-            ref={bodyRef}
             id="template-body"
             name="body"
             required
@@ -162,10 +145,6 @@ export function TemplateForm({ prefix, senderId, template }: TemplateFormProps) 
             member
           </p>
           <FieldError id="template-body-error" message={error("body")} />
-          <p className="text-xs text-muted-foreground">
-            The count includes the &ldquo;{prefix}&rdquo; prefix and counts placeholders as written. The final count
-            is shown when you send.
-          </p>
         </div>
 
         <Button type="submit" disabled={pending} className="h-11 self-start px-5 text-[13px]">

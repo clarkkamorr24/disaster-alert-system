@@ -43,13 +43,17 @@
   --color-control-foreground: var(--control-foreground);
   --color-avatar: var(--avatar);
   --color-avatar-foreground: var(--avatar-foreground);
-  --color-accent-border-soft: var(--accent-border-soft);
   --color-any-hazard-tile: var(--any-hazard-tile);
   --color-any-hazard-tile-foreground: var(--any-hazard-tile-foreground);
   --color-dashed-border: var(--dashed-border);
   --color-scrim: var(--scrim);
   --color-phone-frame: var(--phone-frame);
   --color-sms-bubble: var(--sms-bubble);
+  --color-sms-screen: var(--sms-screen);
+  --color-sms-chrome: var(--sms-chrome);
+  --color-sms-accent: var(--sms-accent);
+  --color-sms-avatar: var(--sms-avatar);
+  --color-sms-mic: var(--sms-mic);
   --color-conditions: var(--conditions);
   --color-conditions-foreground: var(--conditions-foreground);
   --color-conditions-label: var(--conditions-label);
@@ -136,16 +140,20 @@
   --control-foreground: #4d5e53;
   --avatar: #e7f3ea;
   --avatar-foreground: #24633e;
-  /* The templates page: placeholder banner border, the "Any hazard" icon tile, dashed "create" cards. */
-  --accent-border-soft: #d4e7d9;
+  /* The templates page: the "Any hazard" icon tile, dashed "create" cards. */
   --any-hazard-tile: #edf7f0;
   --any-hazard-tile-foreground: #32704a;
   --dashed-border: #bccbc0;
   /* Dialog and drawer backdrops; use with an opacity, e.g. bg-scrim/55. */
   --scrim: #0b1d12;
-  /* The SMS preview's phone mockup: the frame (same in both themes) and the received-message bubble. */
+  /* The SMS preview's phone mockup, styled after the iPhone Messages app. */
   --phone-frame: #18241d;
-  --sms-bubble: #e4e8e5;
+  --sms-bubble: #e9e9eb;
+  --sms-screen: #ffffff;
+  --sms-chrome: #f6f6f6;
+  --sms-accent: #007aff;
+  --sms-avatar: #a1a1a6;
+  --sms-mic: #f26b52;
   /* The zones page's Current conditions card; dark green in both themes. */
   --conditions: #17482d;
   --conditions-foreground: #ffffff;
@@ -243,11 +251,17 @@
   --control-foreground: #f0f4f1;
   --avatar: #16271c;
   --avatar-foreground: #dcfce7;
-  --accent-border-soft: #24452f;
   --any-hazard-tile: #16271c;
   --any-hazard-tile-foreground: #7fd1a0;
   --dashed-border: #3b4b41;
-  --sms-bubble: #2a3630;
+  /* Green-tinted greys from the dark palette; the bezel is lighter than the card so the phone stands out. */
+  --phone-frame: #2a362f;
+  --sms-bubble: #2c3832;
+  --sms-screen: #161f1a;
+  --sms-chrome: #1f2923;
+  --sms-accent: #5aa9ff;
+  --sms-avatar: #5f6e65;
+  --sms-mic: #ff8a70;
   --conditions-shadow: 0 0 #0000;
   --destructive: oklch(0.704 0.191 22.216);
   --border: #26302a;
